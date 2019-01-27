@@ -1,6 +1,19 @@
 import asyncio
 from aggregator.mqtt_client import MqttListenerClient
 from aggregator.communication import HttpServerInputMessageQueue
+from aggregator.database import MySQLAdapter
+from aggregator.redis import RedisAdapter
+from aggregator.logic import Aggregator
+from aggregator.logging import Logger
+
+
+logger = Logger(subsystem='root')
+
+
+aggregator = Aggregator(
+    MySQLAdapter(),
+    RedisAdapter(),
+)
 
 
 loop = asyncio.get_event_loop()
