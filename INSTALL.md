@@ -21,3 +21,5 @@ python3.6 -m venv venv
 # to avoid having to write in ~/Library/Caches/pip/wheel..
 pip install -r requirements.txt 
 
+# Run server
+python server.py
