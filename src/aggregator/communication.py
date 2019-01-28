@@ -1,4 +1,5 @@
 import asyncio
+from queue import Queue
 
 
 class HttpServerInputMessageQueue(object):
@@ -20,3 +21,30 @@ class HttpServerInputMessageQueue(object):
         """
         return await self.msg_queue.get()
 
+
+class WorkerInputQueue(object):
+    def __init__(self, asyncio_loop):
+        self.queue = Queue()
+        self.asyncio_loop = asyncio_loop
+
+    def add_task_with_result_future(self, task, logger):
+        # logger = logger.getLogger(subsystem='worker_q')
+        fut = asyncio.Future()
+
+        async def respond_async(error, value):
+            if error:
+                fut.set_exception(error)
+            else:
+                fut.set_result(value)
+
+        def respond(error, value):
+            # logger.info('respond')
+            coro = respond_async(error, value)
+            asyncio.run_coroutine_threadsafe(coro, self.asyncio_loop)
+
+        # logger.info('put in queue')
+        self.queue.put((task, respond, logger))
+        return fut
+
+    def get_next_task_blocking(self):
+        return self.queue.get()

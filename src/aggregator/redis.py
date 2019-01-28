@@ -4,10 +4,10 @@ from aggregator.model import User
 
 
 class RedisAdapter(object):
-    def __init__(self):
-        self.redis = redis.Redis(host='localhost', port=6379, db=0)
-        self.key_prefix = 'msl'
-        self.expiration_time_in_sec = 60
+    def __init__(self, host, port, db, key_prefix, expiration_time_in_sec):
+        self.redis = redis.Redis(host=host, port=port, db=db)
+        self.key_prefix = key_prefix
+        self.expiration_time_in_sec = expiration_time_in_sec
 
     def get_user_by_id(self, user_id, logger):
         logger = logger.getLogger(subsystem='redis')
