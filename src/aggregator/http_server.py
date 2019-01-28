@@ -70,8 +70,6 @@ def run_http_server(input_message_queue, aggregator, worker_input_queue, logger,
 
     # -- Run server ----
 
-    app.shutdown()
-
     app.run(
         host=host,
         port=port,
