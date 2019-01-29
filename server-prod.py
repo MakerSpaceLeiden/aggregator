@@ -2,7 +2,8 @@
 import os
 import sys
 
-print(os.environ)
+# In production, using systemd, to set environment variables use:
+# systemctl set-environment var=value
 
 
 CONFIG = {
