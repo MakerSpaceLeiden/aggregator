@@ -17,7 +17,7 @@ class MqttListenerClient(object):
 
     def _on_connect(self, client, userdata, flags, rc):
         print("Connected with result code "+str(rc))
-        self.client.subscribe("log/#")
+        self.client.subscribe([("ac/#", 0)])
 
     def _on_message(self, client, userdata, msg):
         self.http_server_input_message_queue.send_message(text = msg.topic+" "+str(msg.payload))
