@@ -11,7 +11,7 @@
 git clone https://github.com/MakerSpaceLeiden/aggregator.git
 
 # Setup virtual environment
-python3.6 -m venv venv
+python3.7 -m venv venv
  . venv/bin/activate
 
 # Install dependencies
