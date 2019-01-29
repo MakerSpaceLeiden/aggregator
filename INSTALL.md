@@ -21,5 +21,9 @@ python3.7 -m venv venv
 # to avoid having to write in ~/Library/Caches/pip/wheel..
 pip install -r requirements.txt 
 
-# Run server
-python server.py
+# Run server locally
+python server-dev.py
+
+# Run server in production with systemd
+# Restart with
+sudo systemctl restart msl_aggregator
