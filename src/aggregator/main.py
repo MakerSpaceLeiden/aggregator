@@ -1,15 +1,41 @@
-import signal
-import sys
-from aggregator.http_server import run_http_server, get_input_message_queue, get_worker_input_queue
-from aggregator.mqtt_client import MqttListenerClient
-from aggregator.database import MySQLAdapter
-from aggregator.redis import RedisAdapter
-from aggregator.logic import Aggregator
-from aggregator.logging import Logger
-from aggregator.worker import Worker
+import daemon
+import daemon.pidfile
 
 
 def run_aggregator(config):
+    # Run locally
+    if not config.get('daemon', None):
+        _main(config)
+        return
+
+    # Production: run as daemon
+    with daemon.DaemonContext(
+            working_directory=config['daemon'].get('work_dir'),
+            umask=config['daemon'].get('umask'),
+            pidfile=daemon.pidfile.PIDLockFile(config['daemon']['pidfile_path']),
+            uid=config['daemon']['uid'],
+            gid=config['daemon']['gid'],
+            prevent_core=True,
+        ):
+        _main(config)
+
+
+def _main(config):
+    # Imports are made here because some libraries initialize file descriptors upon import,
+    # but when daemonized those file descriptors are closed
+
+    import signal
+    import sys
+    from aggregator.http_server import run_http_server, get_input_message_queue, get_worker_input_queue
+    from aggregator.mqtt_client import MqttListenerClient
+    from aggregator.database import MySQLAdapter
+    from aggregator.redis import RedisAdapter
+    from aggregator.logic import Aggregator
+    from aggregator.logging import Logger, configure_logging
+    from aggregator.worker import Worker
+
+    configure_logging(**config.get('logging', {}))
+
     logger = Logger(subsystem='root')
 
     aggregator = Aggregator(
@@ -31,6 +57,7 @@ def run_aggregator(config):
     signal.signal(signal.SIGINT, signal_handler)
     # signal.pause()
 
+    logger.info('Server started')
     run_http_server(
         input_message_queue=q,
         aggregator=aggregator,

@@ -1,12 +1,20 @@
 import logging
+from logging.handlers import RotatingFileHandler
 
 logger = logging.getLogger('aggregator')
-logger.setLevel(logging.DEBUG)
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s:%(subsystem)s - %(levelname)s - %(message)s')
-ch.setFormatter(formatter)
-logger.addHandler(ch)
+
+
+def configure_logging(log_filepath=None, max_bytes=None, backup_count=None):
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s:%(subsystem)s - %(levelname)s - %(message)s')
+
+    if log_filepath:
+        ch = RotatingFileHandler(log_filepath, maxBytes=max_bytes, backupCount=backup_count)
+    else:
+        ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
 
 class Logger(object):

@@ -4,6 +4,20 @@ import sys
 
 
 CONFIG = {
+    # 'daemon': {
+    #     'work_dir': '/Users/stefano',
+    #     'umask': 0o022,
+    #     'pidfile_path': '/Users/stefano/aggregator_pidfile',
+    #     'uid': 501,
+    #     'gid': 20,
+    # },
+
+    # 'logging': {
+    #     'log_filepath': '/Users/stefano/aggregator_log.txt',
+    #     'max_bytes': 1 * 1024 * 1024,  # 1 Mb
+    #     'backup_count': 10,
+    # },
+
     'mysql': {
         'host': 'localhost',
         'port': 3306,
