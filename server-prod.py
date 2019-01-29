@@ -2,6 +2,8 @@
 import os
 import sys
 
+print(os.environ)
+
 
 CONFIG = {
     # 'daemon': {
@@ -12,11 +14,11 @@ CONFIG = {
     #     'gid': 20,
     # },
 
-    # 'logging': {
-    #     'log_filepath': '/Users/stefano/aggregator_log.txt',
-    #     'max_bytes': 1 * 1024 * 1024,  # 1 Mb
-    #     'backup_count': 10,
-    # },
+    #'logging': {
+    #    'log_filepath': '/var/log/msl_aggregator.log',
+    #    'max_bytes': 1 * 1024 * 1024,  # 1 Mb
+    #    'backup_count': 10,
+    #},
 
     'mysql': {
         'host': 'localhost',
@@ -44,8 +46,8 @@ CONFIG = {
         'port': 5000,
         'basic_auth': {
             'realm': 'MSL Aggregator',
-            'username': 'user',
-            'password': 'pass',
+            'username': os.environ['MSL_AGGREGATOR_BASIC_AUTH_USERNAME'],
+            'password': os.environ['MSL_AGGREGATOR_BASIC_AUTH_PASSWORD'],
         },
     },
 }
