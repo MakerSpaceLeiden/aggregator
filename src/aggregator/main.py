@@ -40,13 +40,17 @@ def _main(config):
 
     logger.info('Initializing Aggregator service')
 
+    # Communication queues
+    q = get_input_message_queue()
+    worker_input_queue = get_worker_input_queue()
+
+    # Application logic
     aggregator = Aggregator(
         MySQLAdapter(**config['mysql']),
         RedisAdapter(**config['redis']),
+        q,
     )
 
-    q = get_input_message_queue()
-    worker_input_queue = get_worker_input_queue()
     mqtt_listener_client = MqttListenerClient(q, worker_input_queue, aggregator, logger, **config['mqtt'])
     mqtt_listener_client.start_listening_on_a_background_thread()
 

@@ -35,11 +35,11 @@ def run_http_server(input_message_queue, aggregator, worker_input_queue, logger,
 
     app = Quart('aggregator')
 
-    @app.route('/')
+    @app.route('/', methods=['GET'])
     async def hello():
         return 'MSL Aggregator'
 
-    @app.route('/tags')
+    @app.route('/tags', methods=['GET'])
     @with_basic_auth
     async def tags():
         logger.info('GET tags')
@@ -47,8 +47,15 @@ def run_http_server(input_message_queue, aggregator, worker_input_queue, logger,
         return jsonify({'tags': [{
             'tag_id': tag.tag_id,
             'tag': tag.tag,
-            'user': tag.user._asdict(),
+            'user': tag.user.for_json(),
         } for tag in _tags]})
+
+    @app.route('/space_state', methods=['GET'])
+    @with_basic_auth
+    async def space_state():
+        logger.info('GET space_state')
+        users = await worker_input_queue.add_task_with_result_future(aggregator.get_space_state, logger)
+        return jsonify({'users_in_space': [user.for_json() for user in users]})
 
     # -- Web Socket -----
 

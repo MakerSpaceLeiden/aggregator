@@ -29,6 +29,13 @@ class RedisAdapter(object):
         logger.info(f'Storing user ID {user.user_id} in space')
         self.redis.hset(self._k_users_in_space(), user.user_id, int(ts))
 
+    def get_user_ids_in_space(self, logger):
+        logger = logger.getLogger(subsystem='redis')
+        logger.info('Getting all users in space')
+        values = self.redis.hgetall(self._k_users_in_space())
+        user_ids = [int(value) for value in values]
+        return user_ids
+
     # -- Keys ----
 
     def _k_users_by_id(self):
