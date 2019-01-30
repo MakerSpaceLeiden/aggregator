@@ -8,4 +8,4 @@
 
 https://balsamiq.cloud/s84bb/pl6cb2r
 
-[Aggregator Architecture](Aggregator Architecture.png)
+![Aggregator Architecture](Aggregator Architecture.png)
