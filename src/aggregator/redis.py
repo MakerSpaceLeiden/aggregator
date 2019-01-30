@@ -24,7 +24,15 @@ class RedisAdapter(object):
         self.redis.hmset(self._k_users_by_id(), dict((str(user.user_id), json.dumps(user._asdict())) for user in users))
         self.redis.pexpire(self._k_users_by_id(), self.expiration_time_in_sec * 1000)
 
+    def store_user_in_space(self, user, ts, logger):
+        logger = logger.getLogger(subsystem='redis')
+        logger.info(f'Storing user ID {user.user_id} in space')
+        self.redis.hset(self._k_users_in_space(), user.user_id, int(ts))
+
     # -- Keys ----
 
     def _k_users_by_id(self):
         return f'{self.key_prefix}:ui'
+
+    def _k_users_in_space(self):
+        return f'{self.key_prefix}:us'

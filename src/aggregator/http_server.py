@@ -70,6 +70,7 @@ def run_http_server(input_message_queue, aggregator, worker_input_queue, logger,
 
     # -- Run server ----
 
+    logger.info(f'HTTP+WS Server listening on {host}:{port}')
     app.run(
         host=host,
         port=port,

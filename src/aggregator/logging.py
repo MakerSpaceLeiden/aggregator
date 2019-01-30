@@ -6,7 +6,7 @@ logger = logging.getLogger('aggregator')
 
 def configure_logging(log_filepath=None, max_bytes=None, backup_count=None):
     logger.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s - %(name)s:%(subsystem)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(req_id)s - %(subsystem)s - %(levelname)s - %(message)s')
 
     if log_filepath:
         ch = RotatingFileHandler(log_filepath, maxBytes=max_bytes, backupCount=backup_count)
@@ -19,6 +19,8 @@ def configure_logging(log_filepath=None, max_bytes=None, backup_count=None):
 
 class Logger(object):
     def __init__(self, **extra):
+        extra.setdefault('subsystem', '')
+        extra.setdefault('req_id', '')
         self.extra = extra
 
     def info(self, msg, **extra):
@@ -26,15 +28,15 @@ class Logger(object):
         e.update(extra)
         logger.info(msg, extra=e)
 
-    def error(self, msg, **extra):
+    def error(self, msg, exc_info=None, **extra):
         e = self.extra.copy()
         e.update(extra)
-        logger.error(msg, extra=e)
+        logger.error(msg, exc_info=exc_info, extra=e)
 
-    def exception(self, msg, **extra):
+    def exception(self, msg, exc_info=True, **extra):
         e = self.extra.copy()
         e.update(extra)
-        logger.exception(msg, extra=e)
+        logger.exception(msg, exc_info=exc_info, extra=e)
 
     def getLogger(self, **extra):
         new_extra = self.extra.copy()

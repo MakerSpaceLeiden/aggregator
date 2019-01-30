@@ -46,5 +46,13 @@ class WorkerInputQueue(object):
         self.queue.put((task, respond, logger))
         return fut
 
+    def add_task(self, task, logger):
+        def respond(error, value):
+            if error:
+                logger.error('Error executing task', exc_info=error)
+            elif value:
+                logger.error(f"Task returned result but it's going to be discarded: {value}")
+        self.queue.put((task, respond, logger))
+
     def get_next_task_blocking(self):
         return self.queue.get()

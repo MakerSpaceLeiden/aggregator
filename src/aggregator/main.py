@@ -38,6 +38,8 @@ def _main(config):
 
     logger = Logger(subsystem='root')
 
+    logger.info('Initializing Aggregator service')
+
     aggregator = Aggregator(
         MySQLAdapter(**config['mysql']),
         RedisAdapter(**config['redis']),
@@ -45,7 +47,7 @@ def _main(config):
 
     q = get_input_message_queue()
     worker_input_queue = get_worker_input_queue()
-    mqtt_listener_client = MqttListenerClient(q, **config['mqtt'])
+    mqtt_listener_client = MqttListenerClient(q, worker_input_queue, aggregator, logger, **config['mqtt'])
     mqtt_listener_client.start_listening_on_a_background_thread()
 
     worker = Worker(worker_input_queue)
@@ -57,7 +59,6 @@ def _main(config):
     signal.signal(signal.SIGINT, signal_handler)
     # signal.pause()
 
-    logger.info('Server started')
     run_http_server(
         input_message_queue=q,
         aggregator=aggregator,
