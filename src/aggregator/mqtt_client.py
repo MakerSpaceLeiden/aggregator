@@ -41,8 +41,8 @@ class MqttListenerClient(object):
         msg_str = msg.payload.decode('utf-8')
         if msg.topic == 'ac/log/master' and msg_str.startswith('JSON='):
             payload = json.loads(msg_str[5:])
-            if payload.get('user_id', None):
-                return 'user_entered_space_door', functools.partial(self.aggregator.user_entered_space_door, payload['user_id'])
+            if payload.get('userid', None) and payload.get('machine', None) == 'spacedeur' and payload.get('acl', None) == 'approved':
+                return 'user_entered_space_door', functools.partial(self.aggregator.user_entered_space_door, payload['userid'])
         # return 'test_msg', functools.partial(self.aggregator.user_entered_space_door, 22)
         return None, None
 
