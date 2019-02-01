@@ -6,3 +6,6 @@ python-daemon
 
 # Cronjob support
 aiocron
+
+# Human-readable time deltas
+humanize

@@ -62,8 +62,8 @@ def run_http_server(input_message_queue, aggregator, worker_input_queue, logger,
     @with_basic_auth
     async def space_state():
         logger.info('GET space_state')
-        users = await worker_input_queue.add_task_with_result_future(aggregator.get_space_state, logger)
-        return jsonify({'users_in_space': [user.for_json() for user in users]})
+        state = await worker_input_queue.add_task_with_result_future(aggregator.get_space_state_for_json, logger)
+        return jsonify(state)
 
     # -- Web Socket -----
 

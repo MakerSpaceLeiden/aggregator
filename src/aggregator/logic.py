@@ -29,11 +29,18 @@ class Aggregator(object):
         self.redis_adapter.store_user_in_space(user, self.clock.now_as_timestamp(), logger)
         self.notifications_queue.send_message(msg_type='user_entered_space')
 
-    def get_space_state(self, logger):
+    def get_space_state_for_json(self, logger):
         logger = logger.getLogger(subsystem='aggregator')
-        user_ids = self.redis_adapter.get_user_ids_in_space(logger)
-        users = [self._get_user_by_id(user_id, logger) for user_id in user_ids]
-        return [u for u in users if u]
+        data = self.redis_adapter.get_user_ids_in_space_with_timestamps(logger)
+        now = self.clock.now_as_timestamp()
+        users = [(self._get_user_by_id(user_id, logger), ts_checkin) for user_id, ts_checkin in data]
+        return {
+            'users_in_space': [{
+                'user': user.for_json() if user else None,
+                'ts_checkin': self.clock.human_str_from_ts(ts_checkin),
+                'ts_checkin_human': self.clock.human_time_delta_from_ts(ts_checkin),
+            } for user, ts_checkin in users],
+        }
 
     def clean_stale_user_checkins(self, logger):
         logger = logger.getLogger(subsystem='aggregator')
