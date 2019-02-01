@@ -1,6 +1,7 @@
 import asyncio
 from functools import wraps
 from quart import Quart, websocket, request, Response, jsonify
+import aiocron
 from aggregator.communication import HttpServerInputMessageQueue, WorkerInputQueue
 
 loop = asyncio.get_event_loop()
@@ -12,6 +13,13 @@ def get_input_message_queue():
 
 def get_worker_input_queue():
     return WorkerInputQueue(loop)
+
+
+def start_checking_for_stale_checkins(aggregator, worker_input_queue, crontab, logger):
+    @aiocron.crontab(crontab)
+    @asyncio.coroutine
+    def early_in_the_morning():
+        worker_input_queue.add_task(aggregator.clean_stale_user_checkins, logger)
 
 
 def run_http_server(input_message_queue, aggregator, worker_input_queue, logger, basic_auth, host, port):

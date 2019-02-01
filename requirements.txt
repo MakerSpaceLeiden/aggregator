@@ -3,3 +3,6 @@ quart
 mysql-connector
 redis
 python-daemon
+
+# Cronjob support
+aiocron
