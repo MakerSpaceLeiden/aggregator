@@ -34,6 +34,7 @@ class Aggregator(object):
         data = self.redis_adapter.get_user_ids_in_space_with_timestamps(logger)
         now = self.clock.now_as_timestamp()
         users = [(self._get_user_by_id(user_id, logger), ts_checkin) for user_id, ts_checkin in data]
+        users.sort(key=lambda checkin: -checkin[1])
         return {
             'users_in_space': [{
                 'user': user.for_json() if user else None,
