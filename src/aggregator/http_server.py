@@ -45,7 +45,7 @@ def run_http_server(input_message_queue, aggregator, worker_input_queue, logger,
     app = Quart('aggregator')
 
     @app.route('/', methods=['GET'])
-    async def hello():
+    async def root():
         return 'MSL Aggregator'
 
     @app.route('/tags', methods=['GET'])
@@ -68,21 +68,21 @@ def run_http_server(input_message_queue, aggregator, worker_input_queue, logger,
 
     # -- Web Socket -----
 
-    async def ws_sending():
-        while True:
-            msg = await input_message_queue.get_next_message()
-            await websocket.send(msg['text'])
-
-    async def ws_receiving():
-        while True:
-            data = await websocket.receive()
-            print(f'received: {data}')
-
-    @app.websocket('/ws')
-    async def ws():
-        producer = asyncio.create_task(ws_sending())
-        consumer = asyncio.create_task(ws_receiving())
-        await asyncio.gather(producer, consumer)
+    # async def ws_sending():
+    #     while True:
+    #         msg = await input_message_queue.get_next_message()
+    #         await websocket.send(msg['text'])
+    #
+    # async def ws_receiving():
+    #     while True:
+    #         data = await websocket.receive()
+    #         print(f'received: {data}')
+    #
+    # @app.websocket('/ws')
+    # async def ws():
+    #     producer = asyncio.create_task(ws_sending())
+    #     consumer = asyncio.create_task(ws_receiving())
+    #     await asyncio.gather(producer, consumer)
 
     # -- Run server ----
 
