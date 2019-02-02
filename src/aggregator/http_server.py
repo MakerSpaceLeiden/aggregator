@@ -32,6 +32,7 @@ def run_http_server(input_message_queue, aggregator, worker_input_queue, logger,
                     request.authorization.username == basic_auth['username'] and
                     request.authorization.password == basic_auth['password']):
                 realm = basic_auth['realm']
+                logger.error(f'Wrong basi auth: username = {request.authorization.username}')
                 return Response(
                     'Could not verify your access level for that URL.\n'
                     'You have to login with proper credentials', 401,
