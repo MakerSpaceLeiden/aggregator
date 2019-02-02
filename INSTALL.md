@@ -27,3 +27,6 @@ python server-dev.py
 # Run server in production with systemd
 # Restart with
 sudo systemctl restart msl_aggregator
+
+# See logs with
+sudo journalctl _PID=<pid>
