@@ -32,7 +32,6 @@ class Aggregator(object):
     def get_space_state_for_json(self, logger):
         logger = logger.getLogger(subsystem='aggregator')
         data = self.redis_adapter.get_user_ids_in_space_with_timestamps(logger)
-        now = self.clock.now_as_timestamp()
         users = [(self._get_user_by_id(user_id, logger), ts_checkin) for user_id, ts_checkin in data]
         users.sort(key=lambda checkin: -checkin[1])
         return {
@@ -45,6 +44,7 @@ class Aggregator(object):
 
     def clean_stale_user_checkins(self, logger):
         logger = logger.getLogger(subsystem='aggregator')
+        logger.info('Checking for stale users')
         users = self.redis_adapter.get_user_ids_in_space_with_timestamps(logger)
         now = self.clock.now_as_timestamp()
         for user_id, ts_checkin in users:
