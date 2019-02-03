@@ -1,10 +1,12 @@
 import redis
 import json
 from aggregator.model import User
+from .clock import Time
 
 
 class RedisAdapter(object):
-    def __init__(self, host, port, db, key_prefix, expiration_time_in_sec):
+    def __init__(self, clock, host, port, db, key_prefix, expiration_time_in_sec):
+        self.clock = clock
         self.redis = redis.Redis(host=host, port=port, db=db)
         self.key_prefix = key_prefix
         self.expiration_time_in_sec = expiration_time_in_sec
@@ -27,7 +29,7 @@ class RedisAdapter(object):
     def store_user_in_space(self, user, ts, logger):
         logger = logger.getLogger(subsystem='redis')
         logger.info(f'Storing user ID {user.user_id} in space')
-        self.redis.hset(self._k_users_in_space(), user.user_id, int(ts))
+        self.redis.hset(self._k_users_in_space(), user.user_id, ts.as_int_timestamp())
 
     def remove_user_from_space(self, user_id, logger):
         logger = logger.getLogger(subsystem='redis')
@@ -38,7 +40,7 @@ class RedisAdapter(object):
         logger = logger.getLogger(subsystem='redis')
         logger.info('Getting all users in space')
         values = self.redis.hgetall(self._k_users_in_space())
-        return [(int(key), int(value)) for key, value in values.items()]
+        return [(int(key), Time.from_timestamp(int(value))) for key, value in values.items()]
 
     # -- Keys ----
 
@@ -47,3 +49,26 @@ class RedisAdapter(object):
 
     def _k_users_in_space(self):
         return f'{self.key_prefix}:us'
+
+
+class MockRedisAdapter(object):
+    def __init__(self, clock):
+        self.clock = clock
+        self.users_by_id = {}
+        self.users_in_space = {}
+
+    def get_user_by_id(self, user_id, logger):
+        return self.users_by_id.get(user_id, None)
+
+    def set_users_by_ids(self, users, logger):
+        self.users_by_id = dict([(u.user_id, u) for u in users])
+
+    def store_user_in_space(self, user, ts, logger):
+        self.users_in_space[user.user_id] = ts.as_int_timestamp()
+
+    def remove_user_from_space(self, user_id, logger):
+        del self.users_in_space[user_id]
+
+    def get_user_ids_in_space_with_timestamps(self, logger):
+        return [(int(key), Time.from_timestamp(int(value))) for key, value in self.users_in_space.items()]
+

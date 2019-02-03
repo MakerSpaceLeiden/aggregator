@@ -9,7 +9,7 @@ class User(namedtuple('User', 'user_id first_name last_name email')):
         return f'{self.first_name} {self.last_name}'
 
     def for_json(self):
-        d = self._asdict()
+        d = dict(self._asdict())
         d['full_name'] = self.full_name
         return d
 

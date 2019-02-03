@@ -55,7 +55,7 @@ def _main(config):
     # Application logic
     aggregator = Aggregator(
         MySQLAdapter(**config['mysql']),
-        RedisAdapter(**config['redis']),
+        RedisAdapter(clock, **config['redis']),
         http_server_input_message_queue,
         clock,
         config['check_stale_checkins']['stale_after_hours'] if 'check_stale_checkins' in config else 0,

@@ -26,19 +26,19 @@ class Aggregator(object):
         if not user:
             raise Exception(f'User ID {user_id} not found in database')
         logger.info(f'user_entered_space_door: {user.full_name}')
-        self.redis_adapter.store_user_in_space(user, self.clock.now_as_timestamp(), logger)
+        self.redis_adapter.store_user_in_space(user, self.clock.now(), logger)
         self.notifications_queue.send_message(msg_type='user_entered_space')
 
     def get_space_state_for_json(self, logger):
         logger = logger.getLogger(subsystem='aggregator')
         data = self.redis_adapter.get_user_ids_in_space_with_timestamps(logger)
         users = [(self._get_user_by_id(user_id, logger), ts_checkin) for user_id, ts_checkin in data]
-        users.sort(key=lambda checkin: -checkin[1])
+        users.sort(key=lambda checkin: -checkin[1].sorting_key())
         return {
             'users_in_space': [{
                 'user': user.for_json() if user else None,
-                'ts_checkin': self.clock.human_str_from_ts(ts_checkin),
-                'ts_checkin_human': self.clock.human_time_delta_from_ts(ts_checkin),
+                'ts_checkin': ts_checkin.human_str(),
+                'ts_checkin_human': ts_checkin.human_delta_from(self.clock.now()),
             } for user, ts_checkin in users],
         }
 
@@ -46,9 +46,9 @@ class Aggregator(object):
         logger = logger.getLogger(subsystem='aggregator')
         logger.info('Checking for stale users')
         users = self.redis_adapter.get_user_ids_in_space_with_timestamps(logger)
-        now = self.clock.now_as_timestamp()
+        now = self.clock.now()
         for user_id, ts_checkin in users:
-            elapsed_time_in_hours = (now - ts_checkin) / 3600
+            elapsed_time_in_hours = now.delta_in_hours(ts_checkin)
             if elapsed_time_in_hours > self.checkin_stale_after_hours:
                 self._check_out_stale_user(user_id, elapsed_time_in_hours, logger)
 

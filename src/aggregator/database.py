@@ -22,3 +22,11 @@ class MySQLAdapter(object):
             FROM members_tag LEFT JOIN members_user ON (members_tag.owner_id = members_user.id)
         ''')
         return [Tag(row[0], row[1], User(*row[2:])) for row in mycursor]
+
+
+class MockDatabaseAdapter(object):
+    def __init__(self, all_users):
+        self.all_users = all_users
+
+    def get_all_users(self, logger):
+        return self.all_users
