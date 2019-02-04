@@ -39,6 +39,7 @@ class MqttListenerClient(object):
 
     def _parse_message(self, msg):
         msg_str = msg.payload.decode('utf-8')
+        # self.logger.info(f'{msg.topic} - {msg_str}')
         if msg.topic == 'ac/log/master' and msg_str.startswith('JSON='):
             payload = json.loads(msg_str[5:])
             if payload.get('userid', None) and payload.get('machine', None) == 'spacedeur' and payload.get('acl', None) == 'approved':
