@@ -35,11 +35,24 @@ class Aggregator(object):
         users = [(self._get_user_by_id(user_id, logger), ts_checkin) for user_id, ts_checkin in data]
         users.sort(key=lambda checkin: -checkin[1].sorting_key())
         return {
+            'machines_on': [self._get_machine_state(machine, logger) for machine in self.redis_adapter.get_machines_on(logger)],
             'users_in_space': [{
                 'user': user.for_json() if user else None,
                 'ts_checkin': ts_checkin.human_str(),
                 'ts_checkin_human': ts_checkin.human_delta_from(self.clock.now()),
+                'machines_on': [self._get_machine_state(machine, logger) for machine in self.redis_adapter.get_machines_on_for_user_id(user.user_id, logger)],
             } for user, ts_checkin in users],
+        }
+
+    def _get_machine_state(self, machine, logger):
+        state = self.redis_adapter.get_machine_on(machine, logger)
+        user = None
+        if state:
+            user = self._get_user_by_id(state['user_id'], logger)
+        return {
+            'machine': machine,
+            'ts': state['ts'] if state else None,
+            'user': user.for_json() if user else None,
         }
 
     def clean_stale_user_checkins(self, logger):
@@ -56,3 +69,29 @@ class Aggregator(object):
         user = self._get_user_by_id(user_id, logger)
         logger.info(f'Checking out stale user {user.full_name if user else user_id} after {int(elapsed_time_in_hours)} hours')
         self.redis_adapter.remove_user_from_space(user_id, logger)
+
+    def user_activated_machine(self, user_id, machine, logger):
+        user = self._get_user_by_id(user_id, logger)
+        logger.info(f'User {user.full_name if user else user_id} activated machine {machine}')
+        self.redis_adapter.store_pending_machine_activation(user_id, machine, logger)
+
+    def machine_power(self, machine, state, logger):
+        if state == 'on':
+            user_id = self.redis_adapter.get_pending_machine_activation(machine, logger)
+            if not user_id:
+                logger.error(f'Machine {machine} started without pending activation')
+            else:
+                user = self._get_user_by_id(user_id, logger)
+                logger.info(f'User {user.full_name if user else user_id} turning on machine {machine}')
+                now = self.clock.now()
+                self.redis_adapter.set_machine_on(machine, user_id, now, logger)
+        else:
+            assert state == 'off'
+            state = self.redis_adapter.get_machine_on(machine, logger)
+            if not state:
+                logger.error(f'Machine {machine} turned off without corresponding ON record')
+            else:
+                logger.info(f'Turning off machine {machine}')
+                self.redis_adapter.set_machine_off(machine, state['user_id'], logger)
+
+

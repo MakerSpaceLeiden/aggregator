@@ -34,7 +34,8 @@ CONFIG = {
         'port': 6379,
         'db': 0,
         'key_prefix': 'msl',
-        'expiration_time_in_sec': 60,
+        'users_expiration_time_in_sec': 60,
+        'pending_machine_activation_timeout_in_sec': 90,
     },
 
     'mqtt': {
