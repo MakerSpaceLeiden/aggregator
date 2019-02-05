@@ -110,14 +110,14 @@ class TestStringMethods(unittest.TestCase):
 
         space_state = self.aggregator.get_space_state_for_json(self.logger)
         self.assertEqual(space_state, {
-         'machines_on': [{'machine': 'tablesaw', 'ts': 1549180499,
+         'machines_on': [{'machine': 'tablesaw', 'ts': '08:54:59 03/02/2019', 'ts_human': 'a moment ago',
                           'user': {'email': 'stefano@stefanomasini.com',
                                    'first_name': 'Stefano',
                                    'full_name': 'Stefano Masini',
                                    'last_name': 'Masini',
                                    'user_id': 1},
                           }],
-         'users_in_space': [{'machines_on': [{'machine': 'tablesaw', 'ts': 1549180499,
+         'users_in_space': [{'machines_on': [{'machine': 'tablesaw', 'ts': '08:54:59 03/02/2019', 'ts_human': 'a moment ago',
                                               'user': {'email': 'stefano@stefanomasini.com',
                                                        'first_name': 'Stefano',
                                                        'full_name': 'Stefano Masini',

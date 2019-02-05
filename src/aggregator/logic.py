@@ -57,7 +57,8 @@ class Aggregator(object):
             user = self._get_user_by_id(state['user_id'], logger)
         return {
             'machine': machine,
-            'ts': state['ts'] if state else None,
+            'ts': state['ts'].human_str() if state else None,
+            'ts_human': state['ts'].human_delta_from(self.clock.now()) if state else None,
             'user': user.for_json() if user else None,
         }
 

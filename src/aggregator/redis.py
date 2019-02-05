@@ -64,7 +64,10 @@ class RedisAdapter(object):
         logger = logger.getLogger(subsystem='redis')
         logger.info(f'Reading machine {machine} state')
         value = self.redis.get(self._k_machine_on(machine))
-        return json.loads(value) if value else None
+        if value:
+            data = json.loads(value)
+            data['ts'] = Time.from_timestamp(data['ts'])
+            return data
 
     def set_machine_off(self, machine, user_id, logger):
         logger = logger.getLogger(subsystem='redis')
