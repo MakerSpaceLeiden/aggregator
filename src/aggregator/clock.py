@@ -11,10 +11,6 @@ class Clock(object):
     def now():
         return Time.from_timestamp(time.time())
 
-    @staticmethod
-    def human_time_delta_from_ts(ts):
-        return humanize.naturaltime(datetime.datetime.fromtimestamp(ts))
-
 
 class Time(object):
     def __init__(self, ts):
@@ -60,6 +56,3 @@ class MockClock(object):
     def now(self):
         return Time.from_timestamp(self.now_ts)
 
-    @staticmethod
-    def human_time_delta_from_ts(ts):
-        return humanize.naturaltime(datetime.datetime.fromtimestamp(ts))
