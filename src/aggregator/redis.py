@@ -58,7 +58,6 @@ class RedisAdapter(object):
         logger = logger.getLogger(subsystem='redis')
         logger.info(f'Setting machine {machine} state ON, for user {user_id}')
         self.redis.set(self._k_machine_on(machine), json.dumps({'user_id': user_id, 'ts': ts.as_int_timestamp()}))
-        self.redis.sadd(self._k_machines_on_for_user_id(user_id), machine)
         self.redis.sadd(self._k_machines_on(), machine)
 
     def get_machine_on(self, machine, logger):
@@ -71,13 +70,7 @@ class RedisAdapter(object):
         logger = logger.getLogger(subsystem='redis')
         logger.info(f'Setting machine {machine} state OFF, for user {user_id}')
         self.redis.delete(self._k_machine_on(machine))
-        self.redis.srem(self._k_machines_on_for_user_id(user_id), machine)
         self.redis.srem(self._k_machines_on(), machine)
-
-    def get_machines_on_for_user_id(self, user_id, logger):
-        logger = logger.getLogger(subsystem='redis')
-        logger.info(f'Reading ON machines for user {user_id}')
-        return [m.decode('utf-8') for m in self.redis.smembers(self._k_machines_on_for_user_id(user_id))]
 
     def get_machines_on(self, logger):
         logger = logger.getLogger(subsystem='redis')
@@ -94,9 +87,6 @@ class RedisAdapter(object):
 
     def _k_machines_on(self):
         return f'{self.key_prefix}:ms'
-
-    def _k_machines_on_for_user_id(self, user_id):
-        return f'{self.key_prefix}:mu{user_id}'
 
     def _k_users_by_id(self):
         return f'{self.key_prefix}:ui'

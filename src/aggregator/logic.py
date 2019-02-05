@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 
 class Aggregator(object):
     def __init__(self, mysql_adapter, redis_adapter, notifications_queue, clock, checkin_stale_after_hours):
@@ -34,13 +36,17 @@ class Aggregator(object):
         data = self.redis_adapter.get_user_ids_in_space_with_timestamps(logger)
         users = [(self._get_user_by_id(user_id, logger), ts_checkin) for user_id, ts_checkin in data]
         users.sort(key=lambda checkin: -checkin[1].sorting_key())
+        all_machines_states = [self._get_machine_state(machine, logger) for machine in self.redis_adapter.get_machines_on(logger)]
+        machines_on_by_user = defaultdict(list)
+        for state in all_machines_states:
+            machines_on_by_user[state['user']['user_id']].append(state)
         return {
-            'machines_on': [self._get_machine_state(machine, logger) for machine in self.redis_adapter.get_machines_on(logger)],
+            'machines_on': all_machines_states,
             'users_in_space': [{
                 'user': user.for_json() if user else None,
                 'ts_checkin': ts_checkin.human_str(),
                 'ts_checkin_human': ts_checkin.human_delta_from(self.clock.now()),
-                'machines_on': [self._get_machine_state(machine, logger) for machine in self.redis_adapter.get_machines_on_for_user_id(user.user_id, logger)],
+                'machines_on': machines_on_by_user.get(user.user_id, []),
             } for user, ts_checkin in users],
         }
 
