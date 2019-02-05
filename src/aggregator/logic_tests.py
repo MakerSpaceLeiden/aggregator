@@ -4,7 +4,7 @@ from .logic import Aggregator
 from .redis import RedisAdapter
 from .clock import MockClock
 from .logging import Logger, configure_logging
-from .model import User
+from .model import User, Machine
 from .http_server import get_input_message_queue
 
 # configure_logging()
@@ -15,8 +15,14 @@ ALL_USERS = [
     STEFANO,
 ]
 
+TABLE_SAW = Machine(1, 'Tablesaw', 'Table saw', 'tablesaw', 'tablesaw')
 
-class TestStringMethods(unittest.TestCase):
+ALL_MACHINES = [
+    TABLE_SAW,
+]
+
+
+class TestApplicationLogic(unittest.TestCase):
 
     def setUp(self):
         self.maxDiff = None  # To see large JSON diffs
@@ -27,7 +33,7 @@ class TestStringMethods(unittest.TestCase):
         redis_adapter = RedisAdapter(self.clock, '127.0.0.1', 6379, 0, 'msl_aggregator_tests', 60, 90)
         self._delete_all_redis_keys(redis_adapter)
         self.aggregator = Aggregator(
-            MockDatabaseAdapter(ALL_USERS),
+            MockDatabaseAdapter(ALL_USERS, ALL_MACHINES),
             redis_adapter,
             http_server_input_message_queue,
             self.clock,
@@ -110,14 +116,14 @@ class TestStringMethods(unittest.TestCase):
 
         space_state = self.aggregator.get_space_state_for_json(self.logger)
         self.assertEqual(space_state, {
-         'machines_on': [{'machine': 'tablesaw', 'ts': '08:54:59 03/02/2019', 'ts_human': 'a moment ago',
+         'machines_on': [{'machine': {'name': 'Tablesaw', 'machine_id': 1}, 'ts': '08:54:59 03/02/2019', 'ts_human': 'a moment ago',
                           'user': {'email': 'stefano@stefanomasini.com',
                                    'first_name': 'Stefano',
                                    'full_name': 'Stefano Masini',
                                    'last_name': 'Masini',
                                    'user_id': 1},
                           }],
-         'users_in_space': [{'machines_on': [{'machine': 'tablesaw', 'ts': '08:54:59 03/02/2019', 'ts_human': 'a moment ago',
+         'users_in_space': [{'machines_on': [{'machine': {'name': 'Tablesaw', 'machine_id': 1}, 'ts': '08:54:59 03/02/2019', 'ts_human': 'a moment ago',
                                               'user': {'email': 'stefano@stefanomasini.com',
                                                        'first_name': 'Stefano',
                                                        'full_name': 'Stefano Masini',

@@ -1,6 +1,6 @@
 import mysql.connector
 from contextlib import contextmanager
-from aggregator.model import User, Tag
+from aggregator.model import User, Tag, Machine
 
 
 class MySQLAdapter(object):
@@ -25,6 +25,14 @@ class MySQLAdapter(object):
             mycursor.execute("SELECT id, first_name, last_name, email FROM members_user")
         return [User(*row) for row in mycursor]
 
+    def get_all_machines(self, logger):
+        logger = logger.getLogger(subsystem='mysql')
+        logger.info('Reading all machines')
+        with self._connection() as db:
+            mycursor = db.cursor()
+            mycursor.execute("SELECT id, name, description, node_machine_name, node_name FROM acl_machine WHERE node_machine_name IS NOT NULL AND node_machine_name <> ''")
+        return [Machine(*row) for row in mycursor]
+
     def get_all_tags(self, logger):
         logger = logger.getLogger(subsystem='mysql')
         logger.info('Reading all tags')
@@ -38,8 +46,12 @@ class MySQLAdapter(object):
 
 
 class MockDatabaseAdapter(object):
-    def __init__(self, all_users):
+    def __init__(self, all_users, all_machines):
         self.all_users = all_users
+        self.all_machines = all_machines
 
     def get_all_users(self, logger):
         return self.all_users
+
+    def get_all_machines(self, logger):
+        return self.all_machines

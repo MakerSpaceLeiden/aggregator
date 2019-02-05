@@ -19,6 +19,18 @@ class Aggregator(object):
                 user = filtered_users[0]
         return user
 
+    def _get_machine_by_name(self, machine_name, logger):
+        machine = self.redis_adapter.get_machine_by_name(machine_name, logger)
+        if not machine:
+            all_machines = self.mysql_adapter.get_all_machines(logger)
+            self.redis_adapter.set_all_machines(all_machines, logger)
+            filtered_machines = [m for m in all_machines if m.node_machine_name == machine_name]
+            if len(filtered_machines) == 1:
+                machine = filtered_machines[0]
+        return machine
+
+    # --------------------------------------------------
+
     def get_tags(self, logger):
         return self.mysql_adapter.get_all_tags(logger)
 
@@ -50,13 +62,17 @@ class Aggregator(object):
             } for user, ts_checkin in users],
         }
 
-    def _get_machine_state(self, machine, logger):
-        state = self.redis_adapter.get_machine_on(machine, logger)
+    def _get_machine_state(self, machine_name, logger):
+        state = self.redis_adapter.get_machine_on(machine_name, logger)
         user = None
         if state:
             user = self._get_user_by_id(state['user_id'], logger)
+        machine = self._get_machine_by_name(machine_name, logger)
         return {
-            'machine': machine,
+            'machine': {
+                'name': machine.name,
+                'machine_id': machine.machine_id,
+            } if machine else machine_name,
             'ts': state['ts'].human_str() if state else None,
             'ts_human': state['ts'].human_delta_from(self.clock.now()) if state else None,
             'user': user.for_json() if user else None,

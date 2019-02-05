@@ -1,7 +1,7 @@
-import json
 import functools
 from uuid import uuid4
 import paho.mqtt.client as mqtt
+from .mqtt_parser import parse_message
 
 
 class MqttListenerClient(object):
@@ -30,7 +30,9 @@ class MqttListenerClient(object):
     def _on_message(self, client, userdata, msg):
         logger = self.logger.getLogger(req_id=uuid4())
         try:
-            parsed_result = self._parse_message(msg)
+            msg_str = msg.payload.decode('utf-8')
+            self.logger.info(f'{msg.topic} - {msg_str}')
+            parsed_result = parse_message(msg.topic, msg_str)
             if parsed_result:
                 msg_type, *args = parsed_result
                 if msg_type:
@@ -43,20 +45,3 @@ class MqttListenerClient(object):
                         logger.error(f'Missing method {msg_type} in {self.aggregator}')
         except Exception as e:
             logger.error('Error in _on_message handler', exc_info=e)
-
-    def _parse_message(self, msg):
-        msg_str = msg.payload.decode('utf-8')
-        self.logger.info(f'{msg.topic} - {msg_str}')
-        if msg.topic == 'ac/log/master' and msg_str.startswith('JSON='):
-            payload = json.loads(msg_str[5:])
-            if payload.get('userid', None) and payload.get('machine', None) == 'spacedeur' and payload.get('acl', None) == 'approved':
-                return 'user_entered_space_door', payload['userid']
-            if payload.get('userid', None) and payload.get('machine', None) == 'tablesaw' and payload.get('acl', None) == 'approved':
-                return 'user_activated_machine', payload['userid'], payload['machine']
-
-        if msg.topic == 'ac/log/tablesaw' and msg_str.startswith('tablesaw Machine switched'):
-            if msg_str == 'tablesaw Machine switched ON with the safety contacto green on-button.':
-                return 'machine_power', 'tablesaw', 'on'
-            if msg_str == 'tablesaw Machine switched OFF with the safety contactor off-button.':
-                return 'machine_power', 'tablesaw', 'off'
-

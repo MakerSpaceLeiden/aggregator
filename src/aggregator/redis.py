@@ -1,6 +1,6 @@
 import redis
 import json
-from aggregator.model import User
+from aggregator.model import User, Machine
 from .clock import Time
 
 
@@ -11,6 +11,21 @@ class RedisAdapter(object):
         self.key_prefix = key_prefix
         self.users_expiration_time_in_sec = users_expiration_time_in_sec
         self.pending_machine_activation_timeout_in_sec = pending_machine_activation_timeout_in_sec
+
+    def get_machine_by_name(self, machine, logger):
+        logger = logger.getLogger(subsystem='redis')
+        data = self.redis.hget(self._k_machines_by_id(), machine)
+        if data:
+            logger.info(f'Found machine {machine}')
+            return Machine(**json.loads(data))
+        else:
+            logger.info(f'Machine {machine} not found')
+
+    def set_all_machines(self, machines, logger):
+        logger = logger.getLogger(subsystem='redis')
+        logger.info(f'Storing {len(machines)} machines')
+        self.redis.hmset(self._k_machines_by_id(), dict((str(machine.node_machine_name), json.dumps(machine._asdict())) for machine in machines))
+        self.redis.pexpire(self._k_machines_by_id(), self.users_expiration_time_in_sec * 1000)
 
     def get_user_by_id(self, user_id, logger):
         logger = logger.getLogger(subsystem='redis')
@@ -84,6 +99,9 @@ class RedisAdapter(object):
 
     def _k_pending_machine_activation(self, machine):
         return f'{self.key_prefix}:ma{machine}'
+
+    def _k_machines_by_id(self):
+        return f'{self.key_prefix}:mc'
 
     def _k_machine_on(self, machine):
         return f'{self.key_prefix}:mo{machine}'
