@@ -16,8 +16,11 @@ def parse_message(topic, message):
     machine_match = MACHINE_TAG_RE.match(topic)
     if machine_match:
         machine_name = machine_match.group(1)
-        if message.startswith(f'{machine_name} Machine switched'):
-            if message == f'{machine_name} Machine switched ON with the safety contacto green on-button.':
-                return 'machine_power', machine_name, 'on'
-            if message == f'{machine_name} Machine switched OFF with the safety contactor off-button.':
-                return 'machine_power', machine_name, 'off'
+        if message == f'{machine_name} Machine switched ON with the safety contacto green on-button.':
+            return 'machine_power', machine_name, 'on'
+        if message == f'{machine_name} Green button on safety contactor pressed.':
+            return 'machine_power', machine_name, 'on'
+        if message == f'{machine_name} Machine switched OFF with the safety contactor off-button.':
+            return 'machine_power', machine_name, 'off'
+        if message == f'{machine_name} Switching off - red button at the back pressed.':
+            return 'machine_power', machine_name, 'off'
