@@ -61,7 +61,7 @@ class RedisAdapter(object):
     def store_pending_machine_activation(self, user_id, machine, logger):
         logger = logger.getLogger(subsystem='redis')
         logger.info(f'Storing pending machine activation: user {user_id}, machine {machine}')
-        self.redis.set(self._k_pending_machine_activation(machine), str(user_id), 'EX', str(self.pending_machine_activation_timeout_in_sec))
+        self.redis.setex(self._k_pending_machine_activation(machine), self.pending_machine_activation_timeout_in_sec, str(user_id))
 
     def get_pending_machine_activation(self, machine, logger):
         logger = logger.getLogger(subsystem='redis')
