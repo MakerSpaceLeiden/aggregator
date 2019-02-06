@@ -6,6 +6,9 @@ MACHINE_TAG_RE = re.compile(r'ac\/log\/(.*)')
 
 
 def parse_message(topic, message):
+    if topic == 'makerspace/groteschakelaar':
+        return 'space_open', message == '1'
+
     if topic == 'ac/log/master' and message.startswith('JSON='):
         payload = json.loads(message[5:])
         if payload.get('userid', None) and payload.get('machine', None) == 'spacedeur' and payload.get('acl', None) == 'approved':

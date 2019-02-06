@@ -53,6 +53,7 @@ class Aggregator(object):
         for state in all_machines_states:
             machines_on_by_user[state['user']['user_id']].append(state)
         return {
+            'space_open': self.redis_adapter.get_space_open(logger),
             'machines_on': all_machines_states,
             'users_in_space': [{
                 'user': user.for_json() if user else None,
@@ -94,11 +95,13 @@ class Aggregator(object):
         self.redis_adapter.remove_user_from_space(user_id, logger)
 
     def user_activated_machine(self, user_id, machine, logger):
+        logger = logger.getLogger(subsystem='aggregator')
         user = self._get_user_by_id(user_id, logger)
         logger.info(f'User {user.full_name if user else user_id} activated machine {machine}')
         self.redis_adapter.store_pending_machine_activation(user_id, machine, logger)
 
     def machine_power(self, machine, state, logger):
+        logger = logger.getLogger(subsystem='aggregator')
         if state == 'on':
             user_id = self.redis_adapter.get_pending_machine_activation(machine, logger)
             if not user_id:
@@ -117,4 +120,6 @@ class Aggregator(object):
                 logger.info(f'Turning off machine {machine}')
                 self.redis_adapter.set_machine_off(machine, state['user_id'], logger)
 
-
+    def space_open(self, is_open, logger):
+        logger = logger.getLogger(subsystem='aggregator')
+        self.redis_adapter.set_space_open(is_open, logger)

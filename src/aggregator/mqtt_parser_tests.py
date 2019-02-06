@@ -3,6 +3,15 @@ from .mqtt_parser import parse_message
 
 
 class TestMqttParsing(unittest.TestCase):
+    def test_groteschakelaar(self):
+        self.assertEqual(
+            parse_message('makerspace/groteschakelaar', '1'),
+            ('space_open', True)
+        )
+        self.assertEqual(
+            parse_message('makerspace/groteschakelaar', '0'),
+            ('space_open', False)
+        )
 
     def test_door(self):
         self.assertEqual(

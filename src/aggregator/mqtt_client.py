@@ -5,7 +5,7 @@ from .mqtt_parser import parse_message
 
 
 class MqttListenerClient(object):
-    def __init__(self, http_server_input_message_queue, worker_input_queue, aggregator, logger, host, port):
+    def __init__(self, http_server_input_message_queue, worker_input_queue, aggregator, logger, host, port, log_all_messages):
         self.http_server_input_message_queue = http_server_input_message_queue
         self.worker_input_queue = worker_input_queue
         self.aggregator = aggregator
@@ -15,6 +15,7 @@ class MqttListenerClient(object):
         self.client.on_message = self._on_message
         self.host = host
         self.port = port
+        self.log_all_messages = log_all_messages
         self.client.connect(host, port)
 
     def start_listening_on_a_background_thread(self):
@@ -25,13 +26,14 @@ class MqttListenerClient(object):
 
     def _on_connect(self, client, userdata, flags, rc):
         self.logger.info(f'Connected to {self.host}:{self.port}')
-        self.client.subscribe([("ac/#", 0)])
+        self.client.subscribe([("#", 0)])
 
     def _on_message(self, client, userdata, msg):
         logger = self.logger.getLogger(req_id=uuid4())
         try:
             msg_str = msg.payload.decode('utf-8')
-            self.logger.info(f'{msg.topic} - {msg_str}')
+            if self.log_all_messages:
+                self.logger.info(f'{msg.topic} - {msg_str}')
             parsed_result = parse_message(msg.topic, msg_str)
             if parsed_result:
                 msg_type, *args = parsed_result

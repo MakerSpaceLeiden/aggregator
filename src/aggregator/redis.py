@@ -95,6 +95,17 @@ class RedisAdapter(object):
         logger.info(f'Reading ON machines')
         return [m.decode('utf-8') for m in self.redis.smembers(self._k_machines_on())]
 
+    def set_space_open(self, is_open, logger):
+        logger = logger.getLogger(subsystem='redis')
+        logger.info(f'Setting space open {is_open}')
+        self.redis.set(self._k_space_open(), str(is_open))
+
+    def get_space_open(self, logger):
+        logger = logger.getLogger(subsystem='redis')
+        logger.info(f'Getting space open')
+        value = self.redis.get(self._k_space_open())
+        return value.decode('utf-8') == 'True' if value else False
+
     # -- Keys ----
 
     def _k_pending_machine_activation(self, machine):
@@ -108,6 +119,9 @@ class RedisAdapter(object):
 
     def _k_machines_on(self):
         return f'{self.key_prefix}:ms'
+
+    def _k_space_open(self):
+        return f'{self.key_prefix}:so'
 
     def _k_users_by_id(self):
         return f'{self.key_prefix}:ui'
