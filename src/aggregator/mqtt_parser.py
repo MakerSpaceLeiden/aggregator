@@ -10,7 +10,7 @@ def parse_message(topic, message):
         payload = json.loads(message[5:])
         if payload.get('userid', None) and payload.get('machine', None) == 'spacedeur' and payload.get('acl', None) == 'approved':
             return 'user_entered_space_door', payload['userid']
-        if payload.get('userid', None) and payload.get('machine', None) == 'tablesaw' and payload.get('acl', None) == 'approved':
+        elif payload.get('userid', None) and payload.get('machine', None) and payload.get('acl', None) == 'approved':
             return 'user_activated_machine', payload['userid'], payload['machine']
 
     machine_match = MACHINE_TAG_RE.match(topic)
