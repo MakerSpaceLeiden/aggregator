@@ -1,4 +1,5 @@
 from collections import defaultdict
+from .model import ALL_LIGHTS
 
 
 class Aggregator(object):
@@ -52,7 +53,9 @@ class Aggregator(object):
         machines_on_by_user = defaultdict(list)
         for state in all_machines_states:
             machines_on_by_user[state['user']['user_id']].append(state)
+        lights_on = self.redis_adapter.get_lights_on(logger)
         return {
+            'lights_on': [light.for_json() for light in ALL_LIGHTS if light.label in lights_on],
             'space_open': self.redis_adapter.get_space_open(logger),
             'machines_on': all_machines_states,
             'users_in_space': [{
@@ -123,3 +126,7 @@ class Aggregator(object):
     def space_open(self, is_open, logger):
         logger = logger.getLogger(subsystem='aggregator')
         self.redis_adapter.set_space_open(is_open, logger)
+
+    def lights(self, room, state, logger):
+        logger = logger.getLogger(subsystem='aggregator')
+        self.redis_adapter.set_lights(room, state, logger)

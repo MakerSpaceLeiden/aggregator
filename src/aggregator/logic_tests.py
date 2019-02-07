@@ -57,6 +57,7 @@ class TestApplicationLogic(unittest.TestCase):
         self.clock.add(1, 'hour')
         space_state = self.aggregator.get_space_state_for_json(self.logger)
         self.assertEqual(space_state, {
+            'lights_on': [],
             'space_open': False,
             'machines_on': [],
             'users_in_space': [{
@@ -78,6 +79,7 @@ class TestApplicationLogic(unittest.TestCase):
         self.clock.add(5, 'hour')
         space_state = self.aggregator.get_space_state_for_json(self.logger)
         self.assertEqual(space_state, {
+            'lights_on': [],
             'space_open': False,
             'machines_on': [],
             'users_in_space': [{
@@ -98,12 +100,18 @@ class TestApplicationLogic(unittest.TestCase):
         # Detect stale checkins
         self.aggregator.clean_stale_user_checkins(self.logger)
         space_state = self.aggregator.get_space_state_for_json(self.logger)
-        self.assertEqual(space_state, {'space_open': False, 'machines_on': [], 'users_in_space': []})
+        self.assertEqual(space_state, {
+            'lights_on': [],
+            'space_open': False,
+            'machines_on': [],
+            'users_in_space': [],
+        })
 
     def test_machine_on_and_off(self):
         self.aggregator.user_entered_space_door(STEFANO.user_id, self.logger)
         space_state = self.aggregator.get_space_state_for_json(self.logger)
         self.assertEqual(space_state, {
+            'lights_on': [],
             'machines_on': [],
             'space_open': False,
             'users_in_space': [{'machines_on': [],
@@ -122,56 +130,105 @@ class TestApplicationLogic(unittest.TestCase):
 
         space_state = self.aggregator.get_space_state_for_json(self.logger)
         self.assertEqual(space_state, {
-         'space_open': False,
-         'machines_on': [{'machine': {'name': 'Tablesaw', 'machine_id': 1}, 'ts': '08:54:59 03/02/2019', 'ts_human': 'a moment ago',
-                          'user': {'email': 'stefano@stefanomasini.com',
-                                   'first_name': 'Stefano',
-                                   'full_name': 'Stefano Masini',
-                                   'last_name': 'Masini',
-                                   'user_id': 1},
-                          }],
-         'users_in_space': [{'machines_on': [{'machine': {'name': 'Tablesaw', 'machine_id': 1}, 'ts': '08:54:59 03/02/2019', 'ts_human': 'a moment ago',
-                                              'user': {'email': 'stefano@stefanomasini.com',
-                                                       'first_name': 'Stefano',
-                                                       'full_name': 'Stefano Masini',
-                                                       'last_name': 'Masini',
-                                                       'user_id': 1},
-                                              }],
-                             'ts_checkin': '08:54:59 03/02/2019',
-                             'ts_checkin_human': 'a moment ago',
+            'lights_on': [],
+            'space_open': False,
+            'machines_on': [{'machine': {'name': 'Tablesaw', 'machine_id': 1}, 'ts': '08:54:59 03/02/2019', 'ts_human': 'a moment ago',
                              'user': {'email': 'stefano@stefanomasini.com',
                                       'first_name': 'Stefano',
                                       'full_name': 'Stefano Masini',
                                       'last_name': 'Masini',
-                                      'user_id': 1}}]}
+                                      'user_id': 1},
+                             }],
+            'users_in_space': [{'machines_on': [{'machine': {'name': 'Tablesaw', 'machine_id': 1}, 'ts': '08:54:59 03/02/2019', 'ts_human': 'a moment ago',
+                                                 'user': {'email': 'stefano@stefanomasini.com',
+                                                          'first_name': 'Stefano',
+                                                          'full_name': 'Stefano Masini',
+                                                          'last_name': 'Masini',
+                                                          'user_id': 1},
+                                                 }],
+                                'ts_checkin': '08:54:59 03/02/2019',
+                                'ts_checkin_human': 'a moment ago',
+                                'user': {'email': 'stefano@stefanomasini.com',
+                                         'first_name': 'Stefano',
+                                         'full_name': 'Stefano Masini',
+                                         'last_name': 'Masini',
+                                         'user_id': 1}}]}
         )
 
         self.aggregator.machine_power('tablesaw', 'off', self.logger)
 
         space_state = self.aggregator.get_space_state_for_json(self.logger)
         self.assertEqual(space_state, {
-         'space_open': False,
-         'machines_on': [],
-         'users_in_space': [{'machines_on': [],
-                             'ts_checkin': '08:54:59 03/02/2019',
-                             'ts_checkin_human': 'a moment ago',
-                             'user': {'email': 'stefano@stefanomasini.com',
-                                      'first_name': 'Stefano',
-                                      'full_name': 'Stefano Masini',
-                                      'last_name': 'Masini',
-                                      'user_id': 1}}]}
+            'lights_on': [],
+            'space_open': False,
+            'machines_on': [],
+            'users_in_space': [{'machines_on': [],
+                                'ts_checkin': '08:54:59 03/02/2019',
+                                'ts_checkin_human': 'a moment ago',
+                                'user': {'email': 'stefano@stefanomasini.com',
+                                         'first_name': 'Stefano',
+                                         'full_name': 'Stefano Masini',
+                                         'last_name': 'Masini',
+                                         'user_id': 1}}]}
         )
 
     def test_space_open_and_closed(self):
         space_state = self.aggregator.get_space_state_for_json(self.logger)
-        self.assertEqual(space_state, {'space_open': False, 'machines_on': [], 'users_in_space': []})
+        self.assertEqual(space_state, {
+            'lights_on': [],
+            'space_open': False,
+            'machines_on': [],
+            'users_in_space': [],
+        })
 
         self.aggregator.space_open(True, self.logger)
 
         space_state = self.aggregator.get_space_state_for_json(self.logger)
-        self.assertEqual(space_state, {'space_open': True, 'machines_on': [], 'users_in_space': []})
+        self.assertEqual(space_state, {
+            'lights_on': [],
+            'space_open': True,
+            'machines_on': [],
+            'users_in_space': [],
+        })
 
         self.aggregator.space_open(False, self.logger)
 
         space_state = self.aggregator.get_space_state_for_json(self.logger)
-        self.assertEqual(space_state, {'space_open': False, 'machines_on': [], 'users_in_space': []})
+        self.assertEqual(space_state, {
+            'lights_on': [],
+            'space_open': False,
+            'machines_on': [],
+            'users_in_space': [],
+        })
+
+    def test_lights_on_and_off(self):
+        space_state = self.aggregator.get_space_state_for_json(self.logger)
+        self.assertEqual(space_state, {
+            'lights_on': [],
+            'space_open': False,
+            'machines_on': [],
+            'users_in_space': [],
+        })
+
+        self.aggregator.lights('large_room', True, self.logger)
+
+        space_state = self.aggregator.get_space_state_for_json(self.logger)
+        self.assertEqual(space_state, {
+            'lights_on': [{
+                'label': 'large_room',
+                'name': 'Large room',
+            }],
+            'space_open': False,
+            'machines_on': [],
+            'users_in_space': [],
+        })
+
+        self.aggregator.lights('large_room', False, self.logger)
+
+        space_state = self.aggregator.get_space_state_for_json(self.logger)
+        self.assertEqual(space_state, {
+            'lights_on': [],
+            'space_open': False,
+            'machines_on': [],
+            'users_in_space': [],
+        })

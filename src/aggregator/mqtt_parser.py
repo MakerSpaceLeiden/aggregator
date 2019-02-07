@@ -16,6 +16,13 @@ def parse_message(topic, message):
         elif payload.get('userid', None) and payload.get('machine', None) and payload.get('acl', None) == 'approved':
             return 'user_activated_machine', payload['userid'], payload['machine']
 
+    if topic == 'test/log/lights' and message.startswith('lights {'):
+        payload = json.loads(message[7:])
+        if payload.get('machine', None) == 'lights' and payload.get('state', None) == 'Powered - no lights':
+            return 'lights', 'large_room', False
+        if payload.get('machine', None) == 'lights' and payload.get('state', None) == 'Lights are ON':
+            return 'lights', 'large_room', True
+
     machine_match = MACHINE_TAG_RE.match(topic)
     if machine_match:
         machine_name = machine_match.group(1)

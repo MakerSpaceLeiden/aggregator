@@ -106,7 +106,23 @@ class RedisAdapter(object):
         value = self.redis.get(self._k_space_open())
         return value.decode('utf-8') == 'True' if value else False
 
+    def set_lights(self, room, lights_on, logger):
+        logger = logger.getLogger(subsystem='redis')
+        logger.info(f'Setting lights {room} {"ON" if lights_on else "OFF"}')
+        if lights_on:
+            self.redis.sadd(self._k_lights_on(), room)
+        else:
+            self.redis.srem(self._k_lights_on(), room)
+
+    def get_lights_on(self, logger):
+        logger = logger.getLogger(subsystem='redis')
+        logger.info(f'Reading lights ON')
+        return [m.decode('utf-8') for m in self.redis.smembers(self._k_lights_on())]
+
     # -- Keys ----
+
+    def _k_lights_on(self):
+        return f'{self.key_prefix}:li'
 
     def _k_pending_machine_activation(self, machine):
         return f'{self.key_prefix}:ma{machine}'

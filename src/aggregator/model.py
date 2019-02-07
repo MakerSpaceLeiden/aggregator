@@ -20,3 +20,13 @@ Tag = namedtuple('Tag', 'tag_id tag user')
 class Machine(namedtuple('Machine', 'machine_id name description node_machine_name node_name')):
     def for_json(self):
         return dict(self._asdict())
+
+
+class Light(namedtuple('Light', 'label name')):
+    def for_json(self):
+        return dict(self._asdict())
+
+
+ALL_LIGHTS = [
+    Light('large_room', 'Large room'),
+]
