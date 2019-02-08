@@ -47,6 +47,11 @@ class RedisAdapter(object):
         logger.info(f'Storing user ID {user.user_id} in space')
         self.redis.hset(self._k_users_in_space(), user.user_id, ts.as_int_timestamp())
 
+    def user_left_space(self, user, logger):
+        logger = logger.getLogger(subsystem='redis')
+        logger.info(f'Removing user ID {user.user_id} from space')
+        self.redis.hdel(self._k_users_in_space(), user.user_id)
+
     def remove_user_from_space(self, user_id, logger):
         logger = logger.getLogger(subsystem='redis')
         logger.info(f'Removing user ID {user_id} from space')

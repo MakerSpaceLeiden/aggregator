@@ -35,14 +35,22 @@ class Aggregator(object):
     def get_tags(self, logger):
         return self.mysql_adapter.get_all_tags(logger)
 
-    def user_entered_space_door(self, user_id, logger):
+    def user_entered_space(self, user_id, logger):
         logger = logger.getLogger(subsystem='aggregator')
         user = self._get_user_by_id(user_id, logger)
         if not user:
             raise Exception(f'User ID {user_id} not found in database')
-        logger.info(f'user_entered_space_door: {user.full_name}')
+        logger.info(f'user_entered_space: {user.full_name}')
         self.redis_adapter.store_user_in_space(user, self.clock.now(), logger)
         self.notifications_queue.send_message(msg_type='user_entered_space')
+
+    def user_left_space(self, user_id, logger):
+        logger = logger.getLogger(subsystem='aggregator')
+        user = self._get_user_by_id(user_id, logger)
+        if not user:
+            raise Exception(f'User ID {user_id} not found in database')
+        logger.info(f'user_left_space: {user.full_name}')
+        self.redis_adapter.user_left_space(user, logger)
 
     def get_space_state_for_json(self, logger):
         logger = logger.getLogger(subsystem='aggregator')

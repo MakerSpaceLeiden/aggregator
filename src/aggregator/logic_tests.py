@@ -48,10 +48,46 @@ class TestApplicationLogic(unittest.TestCase):
         for key in keys:
             self.redis_adapter.redis.delete(key)
 
+    def test_enter_and_leave_space(self):
+        space_state = self.aggregator.get_space_state_for_json(self.logger)
+        self.assertEqual(space_state, {
+            'lights_on': [],
+            'space_open': False,
+            'machines_on': [],
+            'users_in_space': [],
+        })
+
+        self.aggregator.user_entered_space(STEFANO.user_id, self.logger)
+
+        space_state = self.aggregator.get_space_state_for_json(self.logger)
+        self.assertEqual(space_state, {
+            'lights_on': [],
+            'space_open': False,
+            'machines_on': [],
+            'users_in_space': [{'machines_on': [],
+                                'ts_checkin': '08:54:59 03/02/2019',
+                                'ts_checkin_human': 'a moment ago',
+                                'user': {'email': 'stefano@stefanomasini.com',
+                                         'first_name': 'Stefano',
+                                         'full_name': 'Stefano Masini',
+                                         'last_name': 'Masini',
+                                         'user_id': 1}}],
+        })
+
+        self.aggregator.user_left_space(STEFANO.user_id, self.logger)
+
+        space_state = self.aggregator.get_space_state_for_json(self.logger)
+        self.assertEqual(space_state, {
+            'lights_on': [],
+            'space_open': False,
+            'machines_on': [],
+            'users_in_space': [],
+        })
+
     def test_stale_checkout_detection(self):
         # Check in at 11pm
         self.clock.set_time_of_day('23:00')
-        self.aggregator.user_entered_space_door(STEFANO.user_id, self.logger)
+        self.aggregator.user_entered_space(STEFANO.user_id, self.logger)
 
         # After an hour (at midnight)
         self.clock.add(1, 'hour')
@@ -108,7 +144,7 @@ class TestApplicationLogic(unittest.TestCase):
         })
 
     def test_machine_on_and_off(self):
-        self.aggregator.user_entered_space_door(STEFANO.user_id, self.logger)
+        self.aggregator.user_entered_space(STEFANO.user_id, self.logger)
         space_state = self.aggregator.get_space_state_for_json(self.logger)
         self.assertEqual(space_state, {
             'lights_on': [],

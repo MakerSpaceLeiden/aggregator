@@ -16,7 +16,11 @@ class TestMqttParsing(unittest.TestCase):
     def test_door(self):
         self.assertEqual(
             parse_message('ac/log/master', 'JSON={"ok": true, "userid": 22, "name": "Stefano Masini", "email": "stefano@stefanomasini.com", "machine": "spacedeur", "acl": "approved"}'),
-            ('user_entered_space_door', 22)
+            ('user_entered_space', 22)
+        )
+        self.assertEqual(
+            parse_message('ac/log/master', 'JSON={"ok": true, "userid": 22, "name": "Stefano Masini", "email": "stefano@stefanomasini.com", "machine": "spacedeur", "acl": "approved", "cmd": "leave"}'),
+            ('user_left_space', 22)
         )
 
     def test_tableSaw(self):
