@@ -11,9 +11,9 @@ def parse_message(topic, message):
 
     if topic == 'ac/log/master' and message.startswith('JSON='):
         payload = json.loads(message[5:])
-        if payload.get('userid', None) and payload.get('machine', None) == 'spacedeur' and payload.get('acl', None) == 'approved' and payload.get('cmd', None == 'leave'):
+        if payload.get('userid', None) and payload.get('machine', None) == 'spacedeur' and payload.get('acl', None) == 'approved' and payload.get('cmd', None) == 'leave':
             return 'user_left_space', payload['userid']
-        elif payload.get('userid', None) and payload.get('machine', None) == 'spacedeur' and payload.get('acl', None) == 'approved':
+        elif payload.get('userid', None) and payload.get('machine', None) == 'spacedeur' and payload.get('acl', None) == 'approved' and payload.get('cmd', None) == 'energize':
             return 'user_entered_space', payload['userid']
         elif payload.get('userid', None) and payload.get('machine', None) and payload.get('acl', None) == 'approved':
             return 'user_activated_machine', payload['userid'], payload['machine']

@@ -15,7 +15,7 @@ class TestMqttParsing(unittest.TestCase):
 
     def test_door(self):
         self.assertEqual(
-            parse_message('ac/log/master', 'JSON={"ok": true, "userid": 22, "name": "Stefano Masini", "email": "stefano@stefanomasini.com", "machine": "spacedeur", "acl": "approved"}'),
+            parse_message('ac/log/master', 'JSON={"ok": true, "userid": 22, "name": "Stefano Masini", "email": "stefano@stefanomasini.com", "machine": "spacedeur", "acl": "approved", "cmd": "energize"}'),
             ('user_entered_space', 22)
         )
         self.assertEqual(
