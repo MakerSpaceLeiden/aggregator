@@ -9,7 +9,7 @@ from .http_server import get_input_message_queue
 
 # configure_logging()
 
-STEFANO = User(1, 'Stefano', 'Masini', 'stefano@stefanomasini.com')
+STEFANO = User(1, 'Stefano', 'Masini', 'stefano@stefanomasini.com', '1234')
 
 ALL_USERS = [
     STEFANO,
@@ -30,7 +30,7 @@ class TestApplicationLogic(unittest.TestCase):
         self.database_adapter = MockDatabaseAdapter
         self.clock = MockClock()
         http_server_input_message_queue = get_input_message_queue()
-        self.redis_adapter = RedisAdapter(self.clock, '127.0.0.1', 6379, 0, 'msl_aggregator_tests', 60, 90)
+        self.redis_adapter = RedisAdapter(self.clock, '127.0.0.1', 6379, 0, 'msl_aggregator_tests', 60, 90, 60)
         self._delete_all_redis_keys()
         self.aggregator = Aggregator(
             MockDatabaseAdapter(ALL_USERS, ALL_MACHINES),
@@ -39,9 +39,14 @@ class TestApplicationLogic(unittest.TestCase):
             self.clock,
             5,
         )
+        self.aggregator.bot_logic.send_message.plug(self._send_bot_message)
+        self.bot_messages = []
 
     def tearDown(self):
         self._delete_all_redis_keys()
+
+    def _send_bot_message(self, chat_id, markdown, logger):
+        self.bot_messages.append( (chat_id, markdown) )
 
     def _delete_all_redis_keys(self):
         keys = self.redis_adapter.redis.keys(self.redis_adapter.key_prefix + ':*')
@@ -142,6 +147,9 @@ class TestApplicationLogic(unittest.TestCase):
             'machines_on': [],
             'users_in_space': [],
         })
+        self.assertEqual(self.bot_messages, [
+            ('1234', 'Did you forget to checkout yesterday?\nYou entered the Space at 23:00:00 03/02/2019'),
+        ])
 
     def test_machine_on_and_off(self):
         self.aggregator.user_entered_space(STEFANO.user_id, self.logger)

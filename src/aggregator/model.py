@@ -3,7 +3,7 @@ from collections import namedtuple
 
 # -- Domain objects ----
 
-class User(namedtuple('User', 'user_id first_name last_name email')):
+class User(namedtuple('User', 'user_id first_name last_name email telegram_user_id')):
     @property
     def full_name(self):
         return f'{self.first_name} {self.last_name}'
@@ -11,7 +11,11 @@ class User(namedtuple('User', 'user_id first_name last_name email')):
     def for_json(self):
         d = dict(self._asdict())
         d['full_name'] = self.full_name
+        del d['telegram_user_id']
         return d
+
+    def uses_telegram(self):
+        return self.telegram_user_id is not None
 
 
 Tag = namedtuple('Tag', 'tag_id tag user')

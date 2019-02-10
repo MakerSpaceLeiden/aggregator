@@ -46,6 +46,18 @@ class WorkerInputQueue(object):
         self.queue.put((task, respond, logger))
         return fut
 
+    def add_task_with_result_blocking(self, task, logger):
+        response_queue = Queue()
+
+        def respond(error, value):
+            response_queue.put((error, value))
+        self.queue.put((task, respond, logger))
+        error, result = response_queue.get()
+        if error:
+            raise error
+        else:
+            return result
+
     def add_task(self, task, logger):
         def respond(error, value):
             if error:
@@ -56,3 +68,15 @@ class WorkerInputQueue(object):
 
     def get_next_task_blocking(self):
         return self.queue.get()
+
+
+class PluggableMethodProxy(object):
+    def __init__(self):
+        self._method = None
+
+    def __call__(self, *args, **kwargs):
+        if self._method:
+            self._method(*args, **kwargs)
+
+    def plug(self, method):
+        self._method = method

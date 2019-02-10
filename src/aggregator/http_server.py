@@ -1,5 +1,6 @@
 import asyncio
-from functools import wraps
+import json
+from functools import wraps, partial
 from quart import Quart, websocket, request, Response, jsonify
 import aiocron
 from aggregator.communication import HttpServerInputMessageQueue, WorkerInputQueue
@@ -46,7 +47,7 @@ def run_http_server(input_message_queue, aggregator, worker_input_queue, logger,
 
     @app.route('/', methods=['GET'])
     async def root():
-        return 'MSL Aggregator'
+        return Response('MSL Aggregator', mimetype='text/plain')
 
     @app.route('/tags', methods=['GET'])
     @with_basic_auth
@@ -65,6 +66,15 @@ def run_http_server(input_message_queue, aggregator, worker_input_queue, logger,
         logger.info('GET space_state')
         state = await worker_input_queue.add_task_with_result_future(aggregator.get_space_state_for_json, logger)
         return jsonify(state)
+
+    @app.route('/telegram/token', methods=['POST'])
+    @with_basic_auth
+    async def telegram_token():
+        logger.info('POST telegram_token')
+        request_body = await request.get_data()
+        request_payload = json.loads(request_body)
+        token = await worker_input_queue.add_task_with_result_future(partial(aggregator.create_telegram_connect_token, request_payload['user_id']), logger)
+        return Response(token.encode('utf-8'), mimetype='text/plain')
 
     # -- Web Socket -----
 
@@ -87,8 +97,12 @@ def run_http_server(input_message_queue, aggregator, worker_input_queue, logger,
     # -- Run server ----
 
     logger.info(f'HTTP+WS Server listening on {host}:{port}')
+
+    # Blocks until Ctrl-C
     app.run(
         host=host,
         port=port,
         loop=loop,
     )
+
+    logger.info('Signal intercepted. Stopping HTTP server.')

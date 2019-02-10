@@ -19,12 +19,13 @@ CONFIG = {
         'key_prefix': 'msl',
         'users_expiration_time_in_sec': 60,
         'pending_machine_activation_timeout_in_sec': 90,
+        'telegram_token_expiration_in_sec': 5 * 60,  # 5 minutes
     },
 
     'mqtt': {
         'host': 'space.makerspaceleiden.nl',
         'port': 1883,
-        'log_all_messages': True,
+        'log_all_messages': False,
     },
 
     'http': {
@@ -41,6 +42,10 @@ CONFIG = {
         # If someone is still checked in at 5am from at least midnight, consider it stale
         'crontab': '0 5 * * *',  # At 5am every day
         'stale_after_hours': 5,
+    },
+
+    'telegram_bot': {
+        'api_token': os.environ['TELEGRAM_BOT_API'],
     },
 }
 

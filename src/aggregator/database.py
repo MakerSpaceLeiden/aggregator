@@ -22,7 +22,7 @@ class MySQLAdapter(object):
         logger.info('Reading all users')
         with self._connection() as db:
             mycursor = db.cursor()
-            mycursor.execute("SELECT id, first_name, last_name, email FROM members_user")
+            mycursor.execute("SELECT id, first_name, last_name, email, telegram_user_id FROM members_user")
         return [User(*row) for row in mycursor]
 
     def get_all_machines(self, logger):
@@ -43,6 +43,16 @@ class MySQLAdapter(object):
                 FROM members_tag LEFT JOIN members_user ON (members_tag.owner_id = members_user.id)
             ''')
         return [Tag(row[0], row[1], User(*row[2:])) for row in mycursor]
+
+    def store_telegram_user_id_for_user_id(self, telegram_user_id, user_id, logger):
+        logger = logger.getLogger(subsystem='mysql')
+        logger.info(f'Registering user {user_id} with Telegram User ID {telegram_user_id}')
+        with self._connection() as db:
+            mycursor = db.cursor()
+            mycursor.execute('''
+                UPDATE members_user SET telegram_user_id = %s WHERE id = %s
+            ''', (telegram_user_id, user_id))
+            db.commit()
 
 
 class MockDatabaseAdapter(object):

@@ -22,6 +22,7 @@ class MqttListenerClient(object):
         self.client.loop_start()
 
     def stop(self):
+        self.logger.info('Stopping MQTT client')
         self.client.loop_stop()
 
     def _on_connect(self, client, userdata, flags, rc):

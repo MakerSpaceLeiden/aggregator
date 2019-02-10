@@ -59,6 +59,10 @@ CONFIG = {
         'crontab': '0 5 * * *',  # At 5am every day
         'stale_after_hours': 5,
     },
+
+    'telegram_bot': {
+        'api_token': os.environ['TELEGRAM_BOT_API'],
+    },
 }
 
 

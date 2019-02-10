@@ -1,5 +1,7 @@
+import random
 from collections import defaultdict
 from .model import ALL_LIGHTS
+from .bot_logic import BotLogic
 
 
 class Aggregator(object):
@@ -9,6 +11,7 @@ class Aggregator(object):
         self.notifications_queue = notifications_queue
         self.clock = clock
         self.checkin_stale_after_hours = checkin_stale_after_hours
+        self.bot_logic = BotLogic(self)
 
     def _get_user_by_id(self, user_id, logger):
         user = self.redis_adapter.get_user_by_id(user_id, logger)
@@ -31,6 +34,16 @@ class Aggregator(object):
         return machine
 
     # --------------------------------------------------
+
+    def get_user_by_telegram_id(self, telegram_id, logger):
+        user = self.redis_adapter.get_user_by_telegram_id(telegram_id, logger)
+        if not user:
+            all_users = self.mysql_adapter.get_all_users(logger)
+            self.redis_adapter.set_users_by_ids(all_users, logger)
+            filtered_users = [u for u in all_users if u.telegram_user_id == telegram_id]
+            if len(filtered_users) == 1:
+                user = filtered_users[0]
+        return user
 
     def get_tags(self, logger):
         return self.mysql_adapter.get_all_tags(logger)
@@ -58,20 +71,22 @@ class Aggregator(object):
         users = [(self._get_user_by_id(user_id, logger), ts_checkin) for user_id, ts_checkin in data]
         users.sort(key=lambda checkin: -checkin[1].sorting_key())
         all_machines_states = [self._get_machine_state(machine, logger) for machine in self.redis_adapter.get_machines_on(logger)]
+        all_machines_states = [ms for ms in all_machines_states if ms]
         machines_on_by_user = defaultdict(list)
         for state in all_machines_states:
-            machines_on_by_user[state['user']['user_id']].append(state)
+            if state.get('user', None) and state['user'].get('user_id', None):
+                machines_on_by_user[state['user']['user_id']].append(state)
         lights_on = self.redis_adapter.get_lights_on(logger)
         return {
             'lights_on': [light.for_json() for light in ALL_LIGHTS if light.label in lights_on],
             'space_open': self.redis_adapter.get_space_open(logger),
             'machines_on': all_machines_states,
             'users_in_space': [{
-                'user': user.for_json() if user else None,
+                'user': user.for_json(),
                 'ts_checkin': ts_checkin.human_str(),
                 'ts_checkin_human': ts_checkin.human_delta_from(self.clock.now()),
                 'machines_on': machines_on_by_user.get(user.user_id, []),
-            } for user, ts_checkin in users],
+            } for user, ts_checkin in users if user],
         }
 
     def _get_machine_state(self, machine_name, logger):
@@ -79,12 +94,16 @@ class Aggregator(object):
         user = None
         if state:
             user = self._get_user_by_id(state['user_id'], logger)
+        if not user:
+            return None
         machine = self._get_machine_by_name(machine_name, logger)
+        if not machine:
+            return None
         return {
             'machine': {
                 'name': machine.name,
                 'machine_id': machine.machine_id,
-            } if machine else machine_name,
+            },
             'ts': state['ts'].human_str() if state else None,
             'ts_human': state['ts'].human_delta_from(self.clock.now()) if state else None,
             'user': user.for_json() if user else None,
@@ -98,12 +117,14 @@ class Aggregator(object):
         for user_id, ts_checkin in users:
             elapsed_time_in_hours = now.delta_in_hours(ts_checkin)
             if elapsed_time_in_hours > self.checkin_stale_after_hours:
-                self._check_out_stale_user(user_id, elapsed_time_in_hours, logger)
+                self._check_out_stale_user(user_id, ts_checkin, elapsed_time_in_hours, logger)
 
-    def _check_out_stale_user(self, user_id, elapsed_time_in_hours, logger):
+    def _check_out_stale_user(self, user_id, ts_checkin, elapsed_time_in_hours, logger):
         user = self._get_user_by_id(user_id, logger)
         logger.info(f'Checking out stale user {user.full_name if user else user_id} after {int(elapsed_time_in_hours)} hours')
         self.redis_adapter.remove_user_from_space(user_id, logger)
+        if user.uses_telegram:
+            self.bot_logic.send_stale_checkout_notification(user, ts_checkin, logger)
 
     def user_activated_machine(self, user_id, machine, logger):
         logger = logger.getLogger(subsystem='aggregator')
@@ -138,3 +159,25 @@ class Aggregator(object):
     def lights(self, room, state, logger):
         logger = logger.getLogger(subsystem='aggregator')
         self.redis_adapter.set_lights(room, state, logger)
+
+    def create_telegram_connect_token(self, user_id, logger):
+        logger = logger.getLogger(subsystem='aggregator')
+        token = str(random.randint(10**20, 10**21))
+        self.redis_adapter.set_telegram_token(token, user_id, logger)
+        return token
+
+    def register_user_by_telegram_token(self, token, telegram_user_id, logger):
+        logger = logger.getLogger(subsystem='aggregator')
+        user_id = self.redis_adapter.get_user_id_by_telegram_token(token, logger)
+        if user_id:
+            user = self._get_user_by_id(user_id, logger)
+            logger.info(f'Registering user {user_id} with Telegram User ID {telegram_user_id}')
+            self.mysql_adapter.store_telegram_user_id_for_user_id(telegram_user_id, user.user_id, logger)
+            return user
+
+    def delete_telegram_id_for_user(self, user_id, logger):
+        # Not implemented yet
+        pass
+
+    def handle_bot_message(self, chat_id, command, logger):
+        return self.bot_logic.handle_message(chat_id, command, logger)

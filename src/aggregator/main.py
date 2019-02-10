@@ -26,6 +26,7 @@ def _main(config):
 
     import signal
     import sys
+    import os
     from aggregator.http_server import run_http_server, get_input_message_queue, get_worker_input_queue, start_checking_for_stale_checkins
     from aggregator.mqtt_client import MqttListenerClient
     from aggregator.database import MySQLAdapter
@@ -34,16 +35,30 @@ def _main(config):
     from aggregator.logging import Logger, configure_logging
     from aggregator.worker import Worker
     from aggregator.clock import Clock
+    from aggregator.telegram_bot import TelegramBot
 
     configure_logging(**config.get('logging', {}))
     logger = Logger(subsystem='root')
     logger.info('Initializing Aggregator service')
 
-    # Properly detect Ctrl+C
-    def signal_handler(sig, frame):
-        print('Detected Ctrl+C')
-        sys.exit(0)
-    signal.signal(signal.SIGINT, signal_handler)
+    # From https://stackoverflow.com/questions/2549939/get-signal-names-from-numbers-in-python
+    # _signames = {v: k
+    #              for k, v in reversed(sorted(vars(signal).items()))
+    #              if k.startswith('SIG') and not k.startswith('SIG_')}
+    #
+    #
+    # def get_signal_name(signum):
+    #     """Returns the signal name of the given signal number."""
+    #     return _signames[signum]
+    #
+    # # Properly detect Ctrl+C
+    # def signal_handler(signum, frame):
+    #     print('AAA')
+    #     # print('Received signal {} ({}), stopping...'.format(signum, get_signal_name(signum)))
+    #     # os._exit(1)
+    # signal.signal(signal.SIGINT, signal_handler)
+    # signal.signal(signal.SIGTERM, signal_handler)
+    # signal.signal(signal.SIGABRT, signal_handler)
 
     # Communication queues
     http_server_input_message_queue = get_input_message_queue()
@@ -69,11 +84,18 @@ def _main(config):
     worker = Worker(worker_input_queue)
     worker.start_working_in_background_thread()
 
+    # Start BOT
+    if config.get('telegram_bot'):
+        telegram_bot = TelegramBot(worker_input_queue, aggregator, logger, **config['telegram_bot'])
+        telegram_bot.start_bot()
+    else:
+        telegram_bot = None
+
     # Start cronjobs
     if 'check_stale_checkins' in config:
         start_checking_for_stale_checkins(aggregator, worker_input_queue, config['check_stale_checkins']['crontab'], logger)
 
-    # Start HTTP server
+    # Start HTTP server (blocks until Ctrl-C)
     run_http_server(
         input_message_queue=http_server_input_message_queue,
         aggregator=aggregator,
@@ -81,3 +103,8 @@ def _main(config):
         logger=logger,
         **config['http']
     )
+
+    # Quit the application
+    if telegram_bot:
+        telegram_bot.stop_bot()
+    mqtt_listener_client.stop()

@@ -9,3 +9,6 @@ aiocron
 
 # Human-readable time deltas
 humanize
+
+# Telegram BOT
+python-telegram-bot
