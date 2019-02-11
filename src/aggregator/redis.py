@@ -44,8 +44,10 @@ class RedisAdapter(object):
             logger.info(f'Storing {len(users)} users')
             self.redis.hmset(self._k_users_by_id(), dict((str(user.user_id), json.dumps(user._asdict())) for user in users))
             self.redis.pexpire(self._k_users_by_id(), self.users_expiration_time_in_sec * 1000)
-            self.redis.hmset(self._k_users_by_telegram_id(), dict((user.telegram_user_id, json.dumps(user._asdict())) for user in users if user.telegram_user_id))
-            self.redis.pexpire(self._k_users_by_telegram_id(), self.users_expiration_time_in_sec * 1000)
+            telegram_users = [u for u in users if u.telegram_user_id]
+            if len(telegram_users) > 0:
+                self.redis.hmset(self._k_users_by_telegram_id(), dict((user.telegram_user_id, json.dumps(user._asdict())) for user in telegram_users))
+                self.redis.pexpire(self._k_users_by_telegram_id(), self.users_expiration_time_in_sec * 1000)
 
     def store_user_in_space(self, user, ts, logger):
         logger = logger.getLogger(subsystem='redis')

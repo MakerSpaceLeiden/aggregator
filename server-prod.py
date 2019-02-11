@@ -42,7 +42,7 @@ CONFIG = {
     'mqtt': {
         'host': 'space.makerspaceleiden.nl',
         'port': 1883,
-        'log_all_messages': False,
+        'log_all_messages': True,
     },
 
     'http': {
