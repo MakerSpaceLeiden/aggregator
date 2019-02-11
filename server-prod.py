@@ -36,6 +36,7 @@ CONFIG = {
         'key_prefix': 'msl',
         'users_expiration_time_in_sec': 60,
         'pending_machine_activation_timeout_in_sec': 90,
+        'telegram_token_expiration_in_sec': 5 * 60,  # 5 minutes
     },
 
     'mqtt': {
