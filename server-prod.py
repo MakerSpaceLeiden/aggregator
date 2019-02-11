@@ -16,7 +16,7 @@ CONFIG = {
     # },
 
     'logging': {
-        'log_filepath': '/var/log/msl_aggregator.log',
+        'log_filepath': '/var/log/aggregator/aggregator.log',
         'when': 'D', 'interval': 1,  # Rotate every day
         'backup_count': 10,  # Keep 10 days of log
     },
