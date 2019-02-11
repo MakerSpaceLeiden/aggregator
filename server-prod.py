@@ -15,11 +15,11 @@ CONFIG = {
     #     'gid': 20,
     # },
 
-    #'logging': {
-    #    'log_filepath': '/var/log/msl_aggregator.log',
-    #    'max_bytes': 1 * 1024 * 1024,  # 1 Mb
-    #    'backup_count': 10,
-    #},
+    'logging': {
+        'log_filepath': '/var/log/msl_aggregator.log',
+        'when': 'D', 'interval': 1,  # Rotate every day
+        'backup_count': 10,  # Keep 10 days of log
+    },
 
     'mysql': {
         'host': 'localhost',
