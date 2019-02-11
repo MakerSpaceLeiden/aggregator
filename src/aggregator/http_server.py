@@ -1,9 +1,11 @@
 import asyncio
 import json
+import logging
 from functools import wraps, partial
 from quart import Quart, websocket, request, Response, jsonify
 import aiocron
 from aggregator.communication import HttpServerInputMessageQueue, WorkerInputQueue
+from quart.logging import default_handler, serving_handler
 
 loop = asyncio.get_event_loop()
 
@@ -24,6 +26,11 @@ def start_checking_for_stale_checkins(aggregator, worker_input_queue, crontab, l
 
 
 def run_http_server(input_message_queue, aggregator, worker_input_queue, logger, basic_auth, host, port):
+    # Configure Quart's internal logging
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    default_handler.setFormatter(formatter)
+    serving_handler.setFormatter(formatter)
+
     logger = logger.getLogger(subsystem='http')
 
     def with_basic_auth(f):
@@ -103,6 +110,7 @@ def run_http_server(input_message_queue, aggregator, worker_input_queue, logger,
         host=host,
         port=port,
         loop=loop,
+        access_log_format="%(h)s %(r)s %(s)s %(b)s %(D)s",
     )
 
     logger.info('Signal intercepted. Stopping HTTP server.')

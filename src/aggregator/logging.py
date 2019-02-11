@@ -1,7 +1,16 @@
 import logging
+import random
+import string
 from logging.handlers import TimedRotatingFileHandler
 
 logger = logging.getLogger('aggregator')
+
+
+CHARS_FOR_RANDOM_REQ_ID = string.digits + string.ascii_lowercase
+
+
+def make_random_req_id():
+    return ''.join([random.choice(CHARS_FOR_RANDOM_REQ_ID) for _ in range(7)])
 
 
 def configure_logging(log_filepath=None, when=None, interval=None, backup_count=None):
@@ -20,7 +29,7 @@ def configure_logging(log_filepath=None, when=None, interval=None, backup_count=
 class Logger(object):
     def __init__(self, **extra):
         extra.setdefault('subsystem', '')
-        extra.setdefault('req_id', '')
+        extra.setdefault('req_id', '__n/a__')
         self.extra = extra
 
     def info(self, msg, **extra):
@@ -43,3 +52,7 @@ class Logger(object):
         new_extra.update(extra)
         return Logger(**new_extra)
 
+    def getLoggerWithRandomReqId(self):
+        new_extra = self.extra.copy()
+        new_extra['req_id'] = make_random_req_id()
+        return Logger(**new_extra)

@@ -44,9 +44,9 @@ CONFIG = {
         'stale_after_hours': 5,
     },
 
-    'telegram_bot': {
-        'api_token': os.environ['TELEGRAM_BOT_API'],
-    },
+    # 'telegram_bot': {
+    #     'api_token': os.environ['TELEGRAM_BOT_API'],
+    # },
 }
 
 

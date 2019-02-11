@@ -1,5 +1,4 @@
 import functools
-from uuid import uuid4
 import paho.mqtt.client as mqtt
 from .mqtt_parser import parse_message
 
@@ -30,7 +29,7 @@ class MqttListenerClient(object):
         self.client.subscribe([("#", 0)])
 
     def _on_message(self, client, userdata, msg):
-        logger = self.logger.getLogger(req_id=uuid4())
+        logger = self.logger.getLoggerWithRandomReqId()
         try:
             msg_str = msg.payload.decode('utf-8')
             if self.log_all_messages:
