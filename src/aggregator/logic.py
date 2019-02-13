@@ -99,7 +99,7 @@ class Aggregator(object):
         }
 
     def _get_machine_state(self, machine, logger):
-        state = self.redis_adapter.get_machine_state(machine.name, logger)
+        state = self.redis_adapter.get_machine_state(machine.node_machine_name, logger)
         return {
             'machine': {
                 'name': machine.name,
