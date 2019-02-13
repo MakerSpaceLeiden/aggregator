@@ -1,5 +1,9 @@
+import os
 import unittest
 from .mqtt_parser import parse_message
+
+DIR_PATH = os.path.dirname(os.path.realpath(__file__))
+SAMPLE_MESSAGES_FILE_PATH = os.path.join(DIR_PATH, 'sample_mqtt_messages.txt')
 
 
 class TestMqttParsing(unittest.TestCase):
@@ -61,10 +65,11 @@ class TestMqttParsing(unittest.TestCase):
             ('lights', 'large_room', True)
         )
 
+    def test_sample_mqtt_messages(self):
+        for line in open(SAMPLE_MESSAGES_FILE_PATH).readlines():
+            topic, message = line.strip().split(' - ', 1)
+            parsed_message = parse_message(topic, message)
+            self.assertIsNotNone(parsed_message, f'Unable to parse message: ({repr(topic)}, {repr(message)})')
+            if parsed_message[0] == 'machine_state' and parsed_message[-1] != 'ready':
+                print(parsed_message)
 
-#  Lights
-#
-# 2019-02-07 20:13:18,733 - aggregator -  - mqtt - INFO - test/log/lights - lights {"node":"lights","machine":"lights","maxMqtt":768,"id":"a46210bf713c","ip":"3C:71:BF:10:62:A7","net":"UTP","mac":"3C:71:BF:10:62:A7","beat":2778380,"approve":0,"deny":0,"requests":0,"cache_hit":0,"cache_miss":0,"mqtt_reconnects":12,"loop_rate":9593.431,"coreTemp":71.66666,"heap_free":194472,"state":"Powered - no lights","powered_time":4194,"running_time":197566402,"ota":true,"acstate1":false,"acstate2":true,"acstate3":true}
-# 2019-02-07 20:24:08,664 - aggregator -  - mqtt - INFO - test/log/lights - lights Lights are on.
-# 2019-02-07 20:24:08,770 - aggregator -  - mqtt - INFO - test/log/lights - lights Changed from state <Powered - no lights> to state <Lights are ON>
-# 2019-02-07 20:24:53,703 - aggregator -  - mqtt - INFO - test/log/lights - lights {"node":"lights","machine":"lights","maxMqtt":768,"id":"a46210bf713c","ip":"3C:71:BF:10:62:A7","net":"UTP","mac":"3C:71:BF:10:62:A7","beat":2779074,"approve":0,"deny":0,"requests":0,"cache_hit":0,"cache_miss":0,"mqtt_reconnects":12,"loop_rate":9555.698,"coreTemp":72.77778,"heap_free":194520,"state":"Lights are ON","powered_time":0,"running_time":197566447,"ota":true,"acstate1":true,"acstate2":false,"acstate3":false}

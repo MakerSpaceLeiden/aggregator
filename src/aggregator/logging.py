@@ -52,7 +52,7 @@ class Logger(object):
         new_extra.update(extra)
         return Logger(**new_extra)
 
-    def getLoggerWithRandomReqId(self):
+    def getLoggerWithRandomReqId(self, prefix):
         new_extra = self.extra.copy()
-        new_extra['req_id'] = make_random_req_id()
+        new_extra['req_id'] = f'{prefix}-{make_random_req_id()}'
         return Logger(**new_extra)

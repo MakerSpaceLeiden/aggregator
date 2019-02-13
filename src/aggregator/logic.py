@@ -33,6 +33,17 @@ class Aggregator(object):
                 machine = filtered_machines[0]
         return machine
 
+    def _get_all_machines(self, logger):
+        print('AAA')
+        machines = self.redis_adapter.get_all_machines(logger)
+        print('AAA 2', machines)
+        if not machines:
+            machines = self.mysql_adapter.get_all_machines(logger)
+            print('AAA 3', machines)
+            self.redis_adapter.set_all_machines(machines, logger)
+        print('AAA 4', machines)
+        return machines
+
     # --------------------------------------------------
 
     def get_user_by_telegram_id(self, telegram_id, logger):
@@ -70,7 +81,8 @@ class Aggregator(object):
         data = self.redis_adapter.get_user_ids_in_space_with_timestamps(logger)
         users = [(self._get_user_by_id(user_id, logger), ts_checkin) for user_id, ts_checkin in data]
         users.sort(key=lambda checkin: -checkin[1].sorting_key())
-        all_machines_states = [self._get_machine_state(machine, logger) for machine in self.redis_adapter.get_machines_on(logger)]
+        all_machines = self._get_all_machines(logger)
+        all_machines_states = [self._get_machine_onoff_state(machine, logger) for machine in self.redis_adapter.get_machines_on(logger)]
         all_machines_states = [ms for ms in all_machines_states if ms]
         machines_on_by_user = defaultdict(list)
         for state in all_machines_states:
@@ -81,6 +93,7 @@ class Aggregator(object):
             'lights_on': [light.for_json() for light in ALL_LIGHTS if light.label in lights_on],
             'space_open': self.redis_adapter.get_space_open(logger),
             'machines_on': all_machines_states,
+            'machines': [self._get_machine_state(machine, logger) for machine in all_machines],
             'users_in_space': [{
                 'user': user.for_json(),
                 'ts_checkin': ts_checkin.human_str(),
@@ -89,7 +102,17 @@ class Aggregator(object):
             } for user, ts_checkin in users if user],
         }
 
-    def _get_machine_state(self, machine_name, logger):
+    def _get_machine_state(self, machine, logger):
+        state = self.redis_adapter.get_machine_state(machine.name, logger)
+        return {
+            'machine': {
+                'name': machine.name,
+                'machine_id': machine.machine_id,
+            },
+            'state': state if state else 'off',
+        }
+
+    def _get_machine_onoff_state(self, machine_name, logger):
         state = self.redis_adapter.get_machine_on(machine_name, logger)
         user = None
         if state:
@@ -123,8 +146,11 @@ class Aggregator(object):
         user = self._get_user_by_id(user_id, logger)
         logger.info(f'Checking out stale user {user.full_name if user else user_id} after {int(elapsed_time_in_hours)} hours')
         self.redis_adapter.remove_user_from_space(user_id, logger)
-        if user.uses_telegram:
-            self.bot_logic.send_stale_checkout_notification(user, ts_checkin, logger)
+        try:
+            if user.uses_telegram():
+                self.bot_logic.send_stale_checkout_notification(user, ts_checkin, logger)
+        except Exception:
+            logger.exception('Unexpected exception when trying to notify user (1)')
 
     def user_activated_machine(self, user_id, machine, logger):
         logger = logger.getLogger(subsystem='aggregator')
@@ -150,7 +176,7 @@ class Aggregator(object):
                 logger.error(f'Machine {machine} turned off without corresponding ON record')
             else:
                 logger.info(f'Turning off machine {machine}')
-                self.redis_adapter.set_machine_off(machine, state['user_id'], logger)
+                self.redis_adapter.set_machine_off(machine, logger)
 
     def space_open(self, is_open, logger):
         logger = logger.getLogger(subsystem='aggregator')
@@ -181,3 +207,21 @@ class Aggregator(object):
 
     def handle_bot_message(self, chat_id, command, logger):
         return self.bot_logic.handle_message(chat_id, command, logger)
+
+    def machine_state(self, machine, state, logger):
+        if state == 'ready':
+            state_on = self.redis_adapter.get_machine_on(machine, logger)
+            if state_on:
+                self._warn_user_of_machine_left_on(machine, state_on['user_id'], logger)
+                self.redis_adapter.set_machine_off(machine, logger)
+        self.redis_adapter.set_machine_state(machine, state, logger)
+
+    def _warn_user_of_machine_left_on(self, machine_name, user_id, logger):
+        user = self._get_user_by_id(user_id, logger)
+        logger.info(f'Warning user {user.full_name if user else user_id} that machine {machine_name} was left on')
+        try:
+            if user and user.uses_telegram():
+                machine = self._get_machine_by_name(machine_name, logger)
+                self.bot_logic.send_machine_left_on_notification(user, machine, logger)
+        except Exception:
+            logger.exception('Unexpected exception when trying to notify user (2)')

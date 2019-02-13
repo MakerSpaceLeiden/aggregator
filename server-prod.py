@@ -37,6 +37,7 @@ CONFIG = {
         'users_expiration_time_in_sec': 60,
         'pending_machine_activation_timeout_in_sec': 90,
         'telegram_token_expiration_in_sec': 5 * 60,  # 5 minutes
+        'machine_state_timeout_in_minutes': 60,  # 1 hour
     },
 
     'mqtt': {

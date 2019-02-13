@@ -15,7 +15,7 @@ class User(namedtuple('User', 'user_id first_name last_name email telegram_user_
         return d
 
     def uses_telegram(self):
-        return self.telegram_user_id is not None
+        return bool(self.telegram_user_id)
 
 
 Tag = namedtuple('Tag', 'tag_id tag user')

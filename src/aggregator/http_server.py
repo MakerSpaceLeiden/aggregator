@@ -40,7 +40,7 @@ def run_http_server(input_message_queue, aggregator, worker_input_queue, logger,
                     request.authorization.username == basic_auth['username'] and
                     request.authorization.password == basic_auth['password']):
                 realm = basic_auth['realm']
-                logger.error(f'Wrong basi auth: username = {request.authorization.username}')
+                request.logger.error(f'Wrong basic auth: username = {request.authorization.username if request.authorization else "n/a"}')
                 return Response(
                     'Could not verify your access level for that URL.\n'
                     'You have to login with proper credentials', 401,
@@ -52,6 +52,11 @@ def run_http_server(input_message_queue, aggregator, worker_input_queue, logger,
 
     app = Quart('aggregator')
 
+    @app.before_request
+    def prepare_request():
+        request.logger = logger.getLoggerWithRandomReqId('http')
+        request.logger.info(f'{request.method} {request.path}')
+
     @app.route('/', methods=['GET'])
     async def root():
         return Response('MSL Aggregator', mimetype='text/plain')
@@ -59,8 +64,7 @@ def run_http_server(input_message_queue, aggregator, worker_input_queue, logger,
     @app.route('/tags', methods=['GET'])
     @with_basic_auth
     async def tags():
-        logger.info('GET tags')
-        _tags = await worker_input_queue.add_task_with_result_future(aggregator.get_tags, logger)
+        _tags = await worker_input_queue.add_task_with_result_future(aggregator.get_tags, request.logger)
         return jsonify({'tags': [{
             'tag_id': tag.tag_id,
             'tag': tag.tag,
@@ -70,17 +74,15 @@ def run_http_server(input_message_queue, aggregator, worker_input_queue, logger,
     @app.route('/space_state', methods=['GET'])
     @with_basic_auth
     async def space_state():
-        logger.info('GET space_state')
-        state = await worker_input_queue.add_task_with_result_future(aggregator.get_space_state_for_json, logger)
+        state = await worker_input_queue.add_task_with_result_future(aggregator.get_space_state_for_json, request.logger)
         return jsonify(state)
 
     @app.route('/telegram/token', methods=['POST'])
     @with_basic_auth
     async def telegram_token():
-        logger.info('POST telegram_token')
         request_body = await request.get_data()
         request_payload = json.loads(request_body)
-        token = await worker_input_queue.add_task_with_result_future(partial(aggregator.create_telegram_connect_token, request_payload['user_id']), logger)
+        token = await worker_input_queue.add_task_with_result_future(partial(aggregator.create_telegram_connect_token, request_payload['user_id']), request.logger)
         return Response(token.encode('utf-8'), mimetype='text/plain')
 
     # -- Web Socket -----

@@ -3,6 +3,11 @@ import paho.mqtt.client as mqtt
 from .mqtt_parser import parse_message
 
 
+MESSAGE_TYPES_TO_DEDUPLICATE = (
+    'space_open',
+)
+
+
 class MqttListenerClient(object):
     def __init__(self, http_server_input_message_queue, worker_input_queue, aggregator, logger, host, port, log_all_messages):
         self.http_server_input_message_queue = http_server_input_message_queue
@@ -16,6 +21,7 @@ class MqttListenerClient(object):
         self.port = port
         self.log_all_messages = log_all_messages
         self.client.connect(host, port)
+        self.msg_deduplication = {}
 
     def start_listening_on_a_background_thread(self):
         self.client.loop_start()
@@ -29,21 +35,35 @@ class MqttListenerClient(object):
         self.client.subscribe([("#", 0)])
 
     def _on_message(self, client, userdata, msg):
-        logger = self.logger.getLoggerWithRandomReqId()
+        logger = self.logger.getLoggerWithRandomReqId('mqtt')
         try:
             msg_str = msg.payload.decode('utf-8')
             if self.log_all_messages:
-                self.logger.info(f'{msg.topic} - {msg_str}')
+                logger.info(f'{msg.topic} - {msg_str}')
             parsed_result = parse_message(msg.topic, msg_str)
             if parsed_result:
-                msg_type, *args = parsed_result
-                if msg_type:
-                    logger.info(f'Received message of type: {msg_type}')
-                    method = getattr(self.aggregator, msg_type, None)
-                    if method:
-                        aggregator_function = functools.partial(method, *args)
-                        self.worker_input_queue.add_task(aggregator_function, logger)
-                    else:
-                        logger.error(f'Missing method {msg_type} in {self.aggregator}')
+                msg_type = parsed_result[0]
+                if msg_type and msg_type != 'ignore':
+                    self._process_parsed_message(parsed_result, logger)
+            else:
+                logger.error(f'Cannot parse message: {msg.topic} - {msg_str}')
         except Exception as e:
             logger.error('Error in _on_message handler', exc_info=e)
+
+    def _process_parsed_message(self, parsed_result, logger):
+        msg_type, *args = parsed_result
+        if msg_type in MESSAGE_TYPES_TO_DEDUPLICATE:
+            last_parsed_message = self.msg_deduplication.get(msg_type)
+            if parsed_result == last_parsed_message:
+                # Skipping this message because last time it was identical (and we know these messages are idempotent)
+                return
+            else:
+                self.msg_deduplication[msg_type] = parsed_result
+
+        logger.info(f'Received message: {repr(parsed_result)}')
+        method = getattr(self.aggregator, msg_type, None)
+        if method:
+            aggregator_function = functools.partial(method, *args)
+            self.worker_input_queue.add_task(aggregator_function, logger)
+        else:
+            logger.error(f'Missing method {msg_type} in {self.aggregator}')

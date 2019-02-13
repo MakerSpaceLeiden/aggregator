@@ -9,5 +9,6 @@ if __name__ == '__main__':
     import unittest
     test_loader = unittest.defaultTestLoader
     test_runner = unittest.TextTestRunner()
-    test_suite = test_loader.discover(src_dirpath, pattern='*_tests.py')
-    test_runner.run(test_suite)
+    package_directories = [root for root, subdirs, files in os.walk(src_dirpath) if '__init__.py' in files]
+    test_suites = [test_loader.discover(pkg_dir, pattern='*_tests.py', top_level_dir=src_dirpath) for pkg_dir in package_directories]
+    test_runner.run(unittest.TestSuite(test_suites))

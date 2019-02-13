@@ -28,7 +28,7 @@ def _main(config):
     import sys
     import os
     from aggregator.http_server import run_http_server, get_input_message_queue, get_worker_input_queue, start_checking_for_stale_checkins
-    from aggregator.mqtt_client import MqttListenerClient
+    from aggregator.mqtt.mqtt_client import MqttListenerClient
     from aggregator.database import MySQLAdapter
     from aggregator.redis import RedisAdapter
     from aggregator.logic import Aggregator

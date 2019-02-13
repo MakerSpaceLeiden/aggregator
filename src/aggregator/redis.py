@@ -5,13 +5,15 @@ from .clock import Time
 
 
 class RedisAdapter(object):
-    def __init__(self, clock, host, port, db, key_prefix, users_expiration_time_in_sec, pending_machine_activation_timeout_in_sec, telegram_token_expiration_in_sec):
+    def __init__(self, clock, host, port, db, key_prefix, users_expiration_time_in_sec, pending_machine_activation_timeout_in_sec,
+                 telegram_token_expiration_in_sec, machine_state_timeout_in_minutes):
         self.clock = clock
         self.redis = redis.Redis(host=host, port=port, db=db)
         self.key_prefix = key_prefix
         self.users_expiration_time_in_sec = users_expiration_time_in_sec
         self.pending_machine_activation_timeout_in_sec = pending_machine_activation_timeout_in_sec
         self.telegram_token_expiration_in_sec = telegram_token_expiration_in_sec
+        self.machine_state_timeout_in_minutes = machine_state_timeout_in_minutes
 
     def get_machine_by_name(self, machine, logger):
         logger = logger.getLogger(subsystem='redis')
@@ -28,6 +30,12 @@ class RedisAdapter(object):
             logger.info(f'Storing {len(machines)} machines')
             self.redis.hmset(self._k_machines_by_id(), dict((str(machine.node_machine_name), json.dumps(machine._asdict())) for machine in machines))
             self.redis.pexpire(self._k_machines_by_id(), self.users_expiration_time_in_sec * 1000)
+
+    def get_all_machines(self, logger):
+        logger = logger.getLogger(subsystem='redis')
+        logger.info(f'Getting all machines')
+        values = self.redis.hvals(self._k_machines_by_id())
+        return [Machine(**json.loads(value)) for value in values]
 
     def get_user_by_id(self, user_id, logger):
         logger = logger.getLogger(subsystem='redis')
@@ -96,11 +104,21 @@ class RedisAdapter(object):
             data['ts'] = Time.from_timestamp(data['ts'])
             return data
 
-    def set_machine_off(self, machine, user_id, logger):
+    def set_machine_off(self, machine, logger):
         logger = logger.getLogger(subsystem='redis')
-        logger.info(f'Setting machine {machine} state OFF, for user {user_id}')
+        logger.info(f'Setting machine {machine} state OFF')
         self.redis.delete(self._k_machine_on(machine))
         self.redis.srem(self._k_machines_on(), machine)
+
+    def set_machine_state(self, machine, state, logger):
+        logger = logger.getLogger(subsystem='redis')
+        logger.info(f'Setting machine {machine} state {state}')
+        self.redis.setex(self._k_machine_state(machine), self.machine_state_timeout_in_minutes * 60, state)
+
+    def get_machine_state(self, machine, logger):
+        logger = logger.getLogger(subsystem='redis')
+        logger.info(f'Getting machine {machine} state')
+        return self.redis.get(self._k_machine_state(machine))
 
     def get_machines_on(self, logger):
         logger = logger.getLogger(subsystem='redis')
@@ -165,6 +183,9 @@ class RedisAdapter(object):
 
     def _k_machines_on(self):
         return f'{self.key_prefix}:ms'
+
+    def _k_machine_state(self, machine):
+        return f'{self.key_prefix}:mt{machine}'
 
     def _k_space_open(self):
         return f'{self.key_prefix}:so'
