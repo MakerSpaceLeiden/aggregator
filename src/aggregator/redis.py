@@ -118,7 +118,8 @@ class RedisAdapter(object):
     def get_machine_state(self, machine, logger):
         logger = logger.getLogger(subsystem='redis')
         logger.info(f'Getting machine {machine} state')
-        return self.redis.get(self._k_machine_state(machine))
+        value = self.redis.get(self._k_machine_state(machine))
+        return value.decode('utf-8') if value else None
 
     def get_machines_on(self, logger):
         logger = logger.getLogger(subsystem='redis')
