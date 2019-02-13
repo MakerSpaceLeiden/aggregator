@@ -34,14 +34,10 @@ class Aggregator(object):
         return machine
 
     def _get_all_machines(self, logger):
-        print('AAA')
         machines = self.redis_adapter.get_all_machines(logger)
-        print('AAA 2', machines)
         if not machines:
             machines = self.mysql_adapter.get_all_machines(logger)
-            print('AAA 3', machines)
             self.redis_adapter.set_all_machines(machines, logger)
-        print('AAA 4', machines)
         return machines
 
     # --------------------------------------------------
