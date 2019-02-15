@@ -1,7 +1,7 @@
 import asyncio
 import json
+import logging
 from functools import wraps, partial
-from quart import Quart, websocket, request, Response, jsonify
 import aiocron
 from aggregator.communication import HttpServerInputMessageQueue, WorkerInputQueue
 
@@ -25,11 +25,21 @@ def start_checking_for_stale_checkins(aggregator, worker_input_queue, crontab, l
 
 def run_http_server(input_message_queue, aggregator, worker_input_queue, logger, logging_handler, basic_auth, host, port):
     # Configure Quart's internal logging
+    quart_app_logger = logging.getLogger('quart.app')
+    quart_app_logger.setLevel(logging.DEBUG)
+    quart_app_logger.addHandler(logging_handler)
+
+    quart_serving_logger = logging.getLogger('quart.serving')
+    quart_serving_logger.setLevel(logging.DEBUG)
+    quart_serving_logger.addHandler(logging_handler)
+
     import quart.logging
     quart.logging.serving_handler = logging_handler
     quart.logging.default_handler = logging_handler
 
     logger = logger.getLogger(subsystem='http')
+
+    from quart import Quart, websocket, request, Response, jsonify
 
     def with_basic_auth(f):
         @wraps(f)
