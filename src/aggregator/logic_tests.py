@@ -15,7 +15,7 @@ ALL_USERS = [
     STEFANO,
 ]
 
-TABLE_SAW = Machine(1, 'Tablesaw', 'Table saw', 'tablesaw', 'tablesaw')
+TABLE_SAW = Machine(1, 'Tablesaw', 'Table saw', 'tablesaw', 'tablesaw', 'Wood workshop')
 
 ALL_MACHINES = [
     TABLE_SAW,

@@ -38,6 +38,7 @@ class Aggregator(object):
         if not machines:
             machines = self.mysql_adapter.get_all_machines(logger)
             self.redis_adapter.set_all_machines(machines, logger)
+        machines.sort(key=lambda m: (m.location_name, m.name))
         return machines
 
     # --------------------------------------------------
@@ -104,6 +105,7 @@ class Aggregator(object):
             'machine': {
                 'name': machine.name,
                 'machine_id': machine.machine_id,
+                'location_name': machine.location_name,
             },
             'state': state if state else 'off',
         }

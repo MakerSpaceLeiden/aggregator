@@ -30,7 +30,13 @@ class MySQLAdapter(object):
         logger.info('Reading all machines')
         with self._connection() as db:
             mycursor = db.cursor()
-            mycursor.execute("SELECT id, name, description, node_machine_name, node_name FROM acl_machine WHERE node_machine_name IS NOT NULL AND node_machine_name <> ''")
+            mycursor.execute('''
+                SELECT acl_machine.id, acl_machine.name, acl_machine.description, node_machine_name, node_name, acl_location.name
+                FROM acl_machine 
+                LEFT JOIN acl_location ON (acl_machine.location_id = acl_location.id)
+                WHERE node_machine_name IS NOT NULL 
+                  AND node_machine_name <> ''
+            ''')
         return [Machine(*row) for row in mycursor]
 
     def get_all_tags(self, logger):
