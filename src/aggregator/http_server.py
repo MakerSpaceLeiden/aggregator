@@ -1,11 +1,9 @@
 import asyncio
 import json
-import logging
 from functools import wraps, partial
 from quart import Quart, websocket, request, Response, jsonify
 import aiocron
 from aggregator.communication import HttpServerInputMessageQueue, WorkerInputQueue
-from quart.logging import default_handler, serving_handler
 
 loop = asyncio.get_event_loop()
 
@@ -25,11 +23,11 @@ def start_checking_for_stale_checkins(aggregator, worker_input_queue, crontab, l
         worker_input_queue.add_task(aggregator.clean_stale_user_checkins, logger)
 
 
-def run_http_server(input_message_queue, aggregator, worker_input_queue, logger, basic_auth, host, port):
+def run_http_server(input_message_queue, aggregator, worker_input_queue, logger, logging_handler, basic_auth, host, port):
     # Configure Quart's internal logging
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    default_handler.setFormatter(formatter)
-    serving_handler.setFormatter(formatter)
+    import quart.logging
+    quart.logging.serving_handler = logging_handler
+    quart.logging.default_handler = logging_handler
 
     logger = logger.getLogger(subsystem='http')
 

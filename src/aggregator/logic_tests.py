@@ -3,11 +3,10 @@ from .database import MockDatabaseAdapter
 from .logic import Aggregator
 from .redis import RedisAdapter
 from .clock import MockClock
-from .logging import Logger, configure_logging
+from .logging import configure_logging_for_tests
 from .model import User, Machine
 from .http_server import get_input_message_queue
 
-# configure_logging()
 
 STEFANO = User(1, 'Stefano', 'Masini', 'stefano@stefanomasini.com', '1234')
 
@@ -26,7 +25,7 @@ class TestApplicationLogic(unittest.TestCase):
 
     def setUp(self):
         self.maxDiff = None  # To see large JSON diffs
-        self.logger = Logger(subsystem='root')
+        self.logger = configure_logging_for_tests()
         self.database_adapter = MockDatabaseAdapter
         self.clock = MockClock()
         http_server_input_message_queue = get_input_message_queue()

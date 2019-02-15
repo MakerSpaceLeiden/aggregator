@@ -32,13 +32,12 @@ def _main(config):
     from aggregator.database import MySQLAdapter
     from aggregator.redis import RedisAdapter
     from aggregator.logic import Aggregator
-    from aggregator.logging import Logger, configure_logging
+    from aggregator.logging import configure_logging
     from aggregator.worker import Worker
     from aggregator.clock import Clock
     from aggregator.telegram_bot import TelegramBot
 
-    configure_logging(**config.get('logging', {}))
-    logger = Logger(subsystem='root')
+    logger, logging_handler = configure_logging(**config.get('logging', {}))
     logger.info('Initializing Aggregator service')
 
     # From https://stackoverflow.com/questions/2549939/get-signal-names-from-numbers-in-python
@@ -101,6 +100,7 @@ def _main(config):
         aggregator=aggregator,
         worker_input_queue=worker_input_queue,
         logger=logger,
+        logging_handler=logging_handler,
         **config['http']
     )
 
