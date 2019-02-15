@@ -22,14 +22,13 @@ ALL_MACHINES = [
 
 
 class TestApplicationLogic(unittest.TestCase):
-
     def setUp(self):
         self.maxDiff = None  # To see large JSON diffs
         self.logger = configure_logging_for_tests()
         self.database_adapter = MockDatabaseAdapter
         self.clock = MockClock()
         http_server_input_message_queue = get_input_message_queue()
-        self.redis_adapter = RedisAdapter(self.clock, '127.0.0.1', 6379, 0, 'msl_aggregator_tests', 60, 90, 60, 60)
+        self.redis_adapter = RedisAdapter(self.clock, '127.0.0.1', 6379, 0, 'msl_aggregator_tests', 60, 90, 60, 60, 7)
         self._delete_all_redis_keys()
         self.aggregator = Aggregator(
             MockDatabaseAdapter(ALL_USERS, ALL_MACHINES),
@@ -55,6 +54,7 @@ class TestApplicationLogic(unittest.TestCase):
     def test_enter_and_leave_space(self):
         space_state = self.aggregator.get_space_state_for_json(self.logger)
         self.assertEqual(space_state['users_in_space'], [])
+        self.assertEqual(space_state['history'], [])
 
         self.aggregator.user_entered_space(STEFANO.user_id, self.logger)
 
@@ -70,10 +70,26 @@ class TestApplicationLogic(unittest.TestCase):
                      'user_id': 1}}
         ])
 
+        self.clock.add(1, 'hour')
         self.aggregator.user_left_space(STEFANO.user_id, self.logger)
 
         space_state = self.aggregator.get_space_state_for_json(self.logger)
         self.assertEqual(space_state['users_in_space'], [])
+        self.assertEqual(space_state['history'], [{
+            'description': 'User Stefano Masini entered the space at 08:54:59 03/02/2019',
+            'first_name': 'Stefano',
+            'hl_type': 'UserEntered',
+            'last_name': 'Masini',
+            'ts': 1549180499,
+            'user_id': 1
+        }, {
+            'description': 'User Stefano Masini left the space at 09:54:59 03/02/2019',
+            'first_name': 'Stefano',
+            'hl_type': 'UserLeft',
+            'last_name': 'Masini',
+            'ts': 1549184099,
+            'user_id': 1
+        }])
 
     def test_stale_checkout_detection(self):
         # Check in at 11pm

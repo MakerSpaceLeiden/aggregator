@@ -1,6 +1,6 @@
 import random
 from collections import defaultdict
-from .model import ALL_LIGHTS
+from .model import ALL_LIGHTS, history_line_to_json, get_history_line_description, UserEntered, UserLeft
 from .bot_logic import BotLogic
 
 
@@ -62,8 +62,10 @@ class Aggregator(object):
         if not user:
             raise Exception(f'User ID {user_id} not found in database')
         logger.info(f'user_entered_space: {user.full_name}')
-        self.redis_adapter.store_user_in_space(user, self.clock.now(), logger)
+        now = self.clock.now()
+        self.redis_adapter.store_user_in_space(user, now, logger)
         self.notifications_queue.send_message(msg_type='user_entered_space')
+        self.redis_adapter.store_history_line(UserEntered(user_id, now, user.first_name, user.last_name), logger)
 
     def user_left_space(self, user_id, logger):
         logger = logger.getLogger(subsystem='aggregator')
@@ -72,6 +74,7 @@ class Aggregator(object):
             raise Exception(f'User ID {user_id} not found in database')
         logger.info(f'user_left_space: {user.full_name}')
         self.redis_adapter.user_left_space(user, logger)
+        self.redis_adapter.store_history_line(UserLeft(user_id, self.clock.now(), user.first_name, user.last_name), logger)
 
     def get_space_state_for_json(self, logger):
         logger = logger.getLogger(subsystem='aggregator')
@@ -86,11 +89,14 @@ class Aggregator(object):
             if state.get('user', None) and state['user'].get('user_id', None):
                 machines_on_by_user[state['user']['user_id']].append(state)
         lights_on = self.redis_adapter.get_lights_on(logger)
+        all_history_lines = self.redis_adapter.get_all_history_lines(logger)
+        all_history_lines.sort(key=lambda hl: hl.ts)
         return {
             'lights_on': [light.for_json() for light in ALL_LIGHTS if light.label in lights_on],
             'space_open': self.redis_adapter.get_space_open(logger),
             'machines_on': all_machines_states,
             'machines': [self._get_machine_state(machine, logger) for machine in all_machines],
+            'history': [self._get_history_line_for_json(hl) for hl in all_history_lines],
             'users_in_space': [{
                 'user': user.for_json(),
                 'ts_checkin': ts_checkin.human_str(),
@@ -98,6 +104,11 @@ class Aggregator(object):
                 'machines_on': machines_on_by_user.get(user.user_id, []),
             } for user, ts_checkin in users if user],
         }
+
+    def _get_history_line_for_json(self, hl):
+        data = history_line_to_json(hl)
+        data['description'] = get_history_line_description(hl)
+        return data
 
     def _get_machine_state(self, machine, logger):
         state = self.redis_adapter.get_machine_state(machine.node_machine_name, logger)

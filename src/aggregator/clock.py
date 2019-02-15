@@ -1,6 +1,7 @@
 import time
 import datetime
 import humanize
+from functools import total_ordering
 
 
 HUMAN_DATETIME_STRING = '%H:%M:%S %d/%m/%Y'
@@ -12,12 +13,22 @@ class Clock(object):
         return Time.from_timestamp(time.time())
 
 
+@total_ordering
 class Time(object):
     def __init__(self, ts):
         self.ts = ts
 
     def __repr__(self):
         return f'<Time {self.human_str()}, {self.ts}>'
+
+    def __eq__(self, other):
+        return self.ts == other.ts
+
+    def __ne__(self, other):
+        return self.ts != other.ts
+
+    def __lt__(self, other):
+        return self.ts < other.ts
 
     def as_int_timestamp(self):
         return int(self.ts)

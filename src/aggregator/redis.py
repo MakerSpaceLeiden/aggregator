@@ -2,11 +2,13 @@ import redis
 import json
 from aggregator.model import User, Machine
 from .clock import Time
+from .utils import make_random_string
+from .model import history_line_to_json, json_to_history_line
 
 
 class RedisAdapter(object):
     def __init__(self, clock, host, port, db, key_prefix, users_expiration_time_in_sec, pending_machine_activation_timeout_in_sec,
-                 telegram_token_expiration_in_sec, machine_state_timeout_in_minutes):
+                 telegram_token_expiration_in_sec, machine_state_timeout_in_minutes, history_lines_expiration_in_days):
         self.clock = clock
         self.redis = redis.Redis(host=host, port=port, db=db)
         self.key_prefix = key_prefix
@@ -14,6 +16,7 @@ class RedisAdapter(object):
         self.pending_machine_activation_timeout_in_sec = pending_machine_activation_timeout_in_sec
         self.telegram_token_expiration_in_sec = telegram_token_expiration_in_sec
         self.machine_state_timeout_in_minutes = machine_state_timeout_in_minutes
+        self.history_lines_expiration_in_days = history_lines_expiration_in_days
 
     def get_machine_by_name(self, machine, logger):
         logger = logger.getLogger(subsystem='redis')
@@ -168,7 +171,36 @@ class RedisAdapter(object):
         if data:
             return User(**json.loads(data))
 
+    def store_history_line(self, hl, logger):
+        logger = logger.getLogger(subsystem='redis')
+        logger.info(f'Storing history line of type {hl.__class__.__name__}')
+        hl_id = make_random_string(10)
+        self.redis.setex(self._k_history_line(hl_id), self.history_lines_expiration_in_days * 24 * 3600, json.dumps(history_line_to_json(hl)))
+        self.redis.sadd(self._k_history_lines(), hl_id)
+
+    def get_all_history_lines(self, logger):
+        logger = logger.getLogger(subsystem='redis')
+        logger.info(f'Get all history lines')
+        all_ids = [hl_id.decode('utf-8') for hl_id in self.redis.smembers(self._k_history_lines())]
+        ids_to_remove = []
+        result = []
+        for hl_id in all_ids:
+            value = self.redis.get(self._k_history_line(hl_id))
+            if value:
+                result.append(json_to_history_line(json.loads(value)))
+            else:
+                ids_to_remove.append(hl_id)
+        if len(ids_to_remove) > 0:
+            self.redis.srem(self._k_history_lines(), *ids_to_remove)
+        return result
+
     # -- Keys ----
+
+    def _k_history_line(self, hl_id):
+        return f'{self.key_prefix}:hl{hl_id}'
+
+    def _k_history_lines(self):
+        return f'{self.key_prefix}:hs'
 
     def _k_lights_on(self):
         return f'{self.key_prefix}:li'

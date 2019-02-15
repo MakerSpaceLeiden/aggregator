@@ -1,14 +1,6 @@
 import logging
-import random
-import string
 from logging.handlers import TimedRotatingFileHandler
-
-
-CHARS_FOR_RANDOM_REQ_ID = string.digits + string.ascii_lowercase
-
-
-def make_random_req_id():
-    return ''.join([random.choice(CHARS_FOR_RANDOM_REQ_ID) for _ in range(7)])
+from .utils import make_random_string
 
 
 def configure_logging(log_filepath=None, when=None, interval=None, backup_count=None):
@@ -69,7 +61,7 @@ class Logger(object):
 
     def getLoggerWithRandomReqId(self, prefix):
         new_extra = self.extra.copy()
-        new_extra['req_id'] = f'{prefix}-{make_random_req_id()}'
+        new_extra['req_id'] = f'{prefix}-{make_random_string(7)}'
         return Logger(self.python_logger, **new_extra)
 
 
