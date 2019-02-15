@@ -105,7 +105,7 @@ class Aggregator(object):
             'machine': {
                 'name': machine.name,
                 'machine_id': machine.machine_id,
-                'location_name': machine.location_name,
+                'location_name': machine.location_name or '',
             },
             'state': state if state else 'off',
         }
