@@ -33,7 +33,7 @@ class BotLogic(object):
         self.send_message(user.telegram_user_id, f'Did you forget to checkout yesterday?\nYou entered the Space at {ts_checkin.human_str()}', logger)
 
     def send_machine_left_on_notification(self, user, machine, logger):
-        self.send_message(user.telegram_user_id, f'You forgot to press the red button on the machine "{machine.name}"! It is not turned off automatically.', logger)
+        self.send_message(user.telegram_user_id, f"You forgot to press the red button on the {machine.name}! But don't worry: it turned off automatically. Just don't forget next time. ;-)", logger)
 
     def handle_message(self, chat_id, message, logger):
         user = self.aggregator.get_user_by_telegram_id(chat_id, logger)
