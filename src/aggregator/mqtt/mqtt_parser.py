@@ -40,6 +40,18 @@ def parse_message(topic, message):
             payload = json.loads(message[len(machine_name)+1:])
             if payload['state'] == 'Waiting for card':
                 return 'machine_state', machine_name, 'ready'
+            if payload['state'] == 'Powered - but idle':
+                return 'machine_state', machine_name, 'powered_idle'
+            if payload['state'] == 'Running':
+                return 'machine_state', machine_name, 'powered_running'
+            if payload['state'] == 'Door held open':
+                return 'machine_state', machine_name, 'door_held_open'
+            if payload['state'] == 'Opening door':
+                return 'machine_state', machine_name, 'door_opening'
+            if payload['state'] == 'Closing door':
+                return 'machine_state', machine_name, 'door_closing'
+            if payload['state'] == 'Compressor runnning':
+                return 'machine_state', machine_name, 'compressor_running'
 
     # Message to ignore
     if (topic, message) in (
@@ -64,44 +76,40 @@ def parse_message(topic, message):
     if topic == 'ac/log/voordeur' and message.startswith('voordeur {'):
         return 'ignore',
 
+    if topic == 'makerspace/grotelasercutter':
+        return 'ignore',
+
     if message.startswith('SIG/2.0 ') and (message.endswith(' beat') or ' announce ' in message or ' welcome ' in message or ' energize '):
         return 'ignore',
 
     if topic == 'ac/log/master' and message.startswith('Announce of'):
         return 'ignore',
 
-    if 'Time warp by' in message:
-        return 'ignore',
+    for substring in MESAGES_TO_IGNORE:
+        if substring in message:
+            return 'ignore',
 
-    if 'Warning: LOW Loop rate' in message:
-        return 'ignore',
 
-    if '(Re)calculated session key' in message:
-        return 'ignore',
-
-    if '(re)Connected to' in message:
-        return 'ignore',
-
-    if '(re)Subscribed.' in message:
-        return 'ignore',
-
-    if 'MySQL Connection not available' in message:
-        return 'ignore',
-
-    if ' approved action ' in message:
-        return 'ignore',
-
-    if ' Received OK to power on ' in message:
-        return 'ignore',
-
-    if ' Time-out; transition from ' in message:
-        return 'ignore',
-
-    if ' Requesting approval' in message:
-        return 'ignore',
-
-    if ' Changed from state ' in message:
-        return 'ignore',
-
-    if 'Control node is switched off - but voltage on motor detected' in message:
-        return 'ignore',
+MESAGES_TO_IGNORE = [
+    'Time warp by',
+    'Warning: LOW Loop rate',
+    '(Re)calculated session key',
+    '(re)Connected to',
+    '(re)Subscribed.',
+    'MySQL Connection not available',
+    ' approved action ',
+    ' Received OK to power on ',
+    ' Time-out; transition from ',
+    ' Requesting approval',
+    ' Changed from state ',
+    'Control node is switched off - but voltage on motor detected',
+    'Out of order energize/denied command received',
+    'Motor started',
+    'Motor stopped',
+    'Failing HELO on',
+    'SIG/2 ready',
+    'Allowing beats to be',
+    'Adjusting beat significantly',
+    'List email not sent',
+    'Compressor running',
+]
