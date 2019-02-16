@@ -35,7 +35,7 @@ def _main(config):
     from aggregator.logging import configure_logging
     from aggregator.worker import Worker
     from aggregator.clock import Clock
-    from aggregator.telegram_bot import TelegramBot
+    from aggregator.bots.telegram_bot import TelegramBot
 
     logger, logging_handler = configure_logging(**config.get('logging', {}))
     logger.info('Initializing Aggregator service')

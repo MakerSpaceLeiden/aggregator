@@ -1,7 +1,7 @@
 import random
 from collections import defaultdict
 from .model import ALL_LIGHTS, history_line_to_json, get_history_line_description, UserEntered, UserLeft
-from .bot_logic import BotLogic
+from .bots.bot_logic import BotLogic
 
 
 class Aggregator(object):

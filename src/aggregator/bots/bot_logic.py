@@ -1,5 +1,5 @@
 from collections import namedtuple
-from .communication import PluggableMethodProxy
+from aggregator.communication import PluggableMethodProxy
 
 ReplyMarkdownWithKeyboard = namedtuple('MarkdownReply', 'markdown next_commands')
 ReplyEndConversation = namedtuple('ReplyEndConversation', 'markdown')
