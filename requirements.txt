@@ -12,3 +12,6 @@ humanize
 
 # Telegram BOT
 python-telegram-bot
+
+# Signal BOT
+dbussy
