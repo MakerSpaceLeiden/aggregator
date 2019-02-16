@@ -3,17 +3,6 @@ import json
 import logging
 from functools import wraps, partial
 import aiocron
-from aggregator.communication import HttpServerInputMessageQueue, WorkerInputQueue
-
-loop = asyncio.get_event_loop()
-
-
-def get_input_message_queue():
-    return HttpServerInputMessageQueue(loop)
-
-
-def get_worker_input_queue():
-    return WorkerInputQueue(loop)
 
 
 def start_checking_for_stale_checkins(aggregator, worker_input_queue, crontab, logger):
@@ -23,7 +12,7 @@ def start_checking_for_stale_checkins(aggregator, worker_input_queue, crontab, l
         worker_input_queue.add_task(aggregator.clean_stale_user_checkins, logger)
 
 
-def run_http_server(input_message_queue, aggregator, worker_input_queue, logger, logging_handler, basic_auth, host, port):
+def run_http_server(loop, input_message_queue, aggregator, worker_input_queue, logger, logging_handler, basic_auth, host, port):
     # Configure Quart's internal logging
     quart_app_logger = logging.getLogger('quart.app')
     quart_app_logger.setLevel(logging.DEBUG)

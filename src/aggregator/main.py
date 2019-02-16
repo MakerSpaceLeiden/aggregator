@@ -27,7 +27,8 @@ def _main(config):
     import signal
     import sys
     import os
-    from aggregator.http_server import run_http_server, get_input_message_queue, get_worker_input_queue, start_checking_for_stale_checkins
+    import asyncio
+    from aggregator.http_server import run_http_server, start_checking_for_stale_checkins
     from aggregator.mqtt.mqtt_client import MqttListenerClient
     from aggregator.database import MySQLAdapter
     from aggregator.redis import RedisAdapter
@@ -36,6 +37,8 @@ def _main(config):
     from aggregator.worker import Worker
     from aggregator.clock import Clock
     from aggregator.bots.telegram_bot import TelegramBot
+    from aggregator.bots.signal_bot import SignalBot
+    from aggregator.communication import HttpServerInputMessageQueue, WorkerInputQueue
 
     logger, logging_handler = configure_logging(**config.get('logging', {}))
     logger.info('Initializing Aggregator service')
@@ -59,9 +62,13 @@ def _main(config):
     # signal.signal(signal.SIGTERM, signal_handler)
     # signal.signal(signal.SIGABRT, signal_handler)
 
+    # Initialize AsyncIO
+    loop = asyncio.get_event_loop()
+
+
     # Communication queues
-    http_server_input_message_queue = get_input_message_queue()
-    worker_input_queue = get_worker_input_queue()
+    http_server_input_message_queue = HttpServerInputMessageQueue(loop)
+    worker_input_queue = WorkerInputQueue(loop)
 
     # Clock
     clock = Clock()
@@ -83,12 +90,16 @@ def _main(config):
     worker = Worker(worker_input_queue)
     worker.start_working_in_background_thread()
 
-    # Start BOT
+    # Start Telegram BOT
     if config.get('telegram_bot'):
         telegram_bot = TelegramBot(worker_input_queue, aggregator, logger, **config['telegram_bot'])
         telegram_bot.start_bot()
     else:
         telegram_bot = None
+
+    # Start Signal BOT
+    signal_bot = SignalBot(worker_input_queue, aggregator, logger, loop)
+    signal_bot.start_bot()
 
     # Start cronjobs
     if 'check_stale_checkins' in config:
@@ -96,6 +107,7 @@ def _main(config):
 
     # Start HTTP server (blocks until Ctrl-C)
     run_http_server(
+        loop=loop,
         input_message_queue=http_server_input_message_queue,
         aggregator=aggregator,
         worker_input_queue=worker_input_queue,
@@ -107,4 +119,5 @@ def _main(config):
     # Quit the application
     if telegram_bot:
         telegram_bot.stop_bot()
+    signal_bot.stop_bot()
     mqtt_listener_client.stop()
