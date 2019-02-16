@@ -12,8 +12,8 @@ class TelegramBot(object):
         self.updater = Updater(api_token)
         self.aggregator.bot_logic.send_message.plug(self._send_message_markdown_to_user)
 
-    def _send_message_markdown_to_user(self, chat_id, markdown, logger):
-        self.updater.bot.send_message(chat_id, text=markdown)
+    def _send_message_markdown_to_user(self, user, markdown, logger):
+        self.updater.bot.send_message(user.telegram_user_id, text=markdown)
 
     def start_bot(self):
         self.logger.info('Starting Telegram BOT')
@@ -28,7 +28,12 @@ class TelegramBot(object):
     def handle_message(self, bot, update):
         try:
             chat_id = str(update.message.chat_id)
-            reply = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.handle_bot_message, chat_id, update.message.text), self.logger)
+            message = update.message.text
+            user = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.get_user_by_telegram_id, chat_id), self.logger)
+            if message.startswith('/start'):
+                reply = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.handle_new_conversation, chat_id, user, message), self.logger)
+            else:
+                reply = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.handle_bot_message, chat_id, user, message), self.logger)
             if isinstance(reply, ReplyMarkdownWithKeyboard):
                 update.message.reply_markdown(reply.markdown, reply_markup=ReplyKeyboardMarkup(reply.next_commands, one_time_keyboard=True))
             elif isinstance(reply, ReplyEndConversation):

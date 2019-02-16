@@ -30,31 +30,29 @@ class BotLogic(object):
         self.send_message = PluggableMethodProxy()
 
     def send_stale_checkout_notification(self, user, ts_checkin, logger):
-        self.send_message(user.telegram_user_id, f'Did you forget to checkout yesterday?\nYou entered the Space at {ts_checkin.human_str()}', logger)
+        self.send_message(user, f'Did you forget to checkout yesterday?\nYou entered the Space at {ts_checkin.human_str()}', logger)
 
     def send_machine_left_on_notification(self, user, machine, logger):
-        self.send_message(user.telegram_user_id, f"You forgot to press the red button on the {machine.name}! But don't worry: it turned off automatically. Just don't forget next time. ;-)", logger)
+        self.send_message(user, f"You forgot to press the red button on the {machine.name}! But don't worry: it turned off automatically. Just don't forget next time. ;-)", logger)
 
-    def handle_message(self, chat_id, message, logger):
-        user = self.aggregator.get_user_by_telegram_id(chat_id, logger)
-        state = self.chat_states.get(chat_id)
-
-        # /start command
-        if message.startswith('/start'):
-            connection_token = get_connection_token_from_message(message)
-            if connection_token:
-                # Clean up old association
-                if user:
-                    self.aggregator.delete_telegram_id_for_user(user.user_id, logger)
-                connecting_user = self.aggregator.register_user_by_telegram_token(connection_token, chat_id, logger)
-                if connecting_user:
-                    return self._handle_state_onboarding(chat_id, connecting_user, logger)
-                return self._handle_state_not_registered(chat_id, logger)
+    def handle_new_conversation(self, chat_id, user, message, logger):
+        connection_token = get_connection_token_from_message(message)
+        if connection_token:
+            # Clean up old association
+            if user:
+                self.aggregator.delete_telegram_id_for_user(user.user_id, logger)
+            connecting_user = self.aggregator.register_user_by_telegram_token(connection_token, chat_id, logger)
+            if connecting_user:
+                return self._handle_state_onboarding(chat_id, connecting_user, logger)
+            return self._handle_state_not_registered(chat_id, logger)
+        else:
+            if user:
+                return self._handle_state_main(chat_id, user, logger)
             else:
-                if user:
-                    return self._handle_state_main(chat_id, user, logger)
-                else:
-                    return self._handle_state_not_registered(chat_id, logger)
+                return self._handle_state_not_registered(chat_id, logger)
+
+    def handle_message(self, chat_id, user, message, logger):
+        state = self.chat_states.get(chat_id)
 
         # Unregistered user
         if not user:
