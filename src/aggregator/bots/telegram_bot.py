@@ -35,7 +35,7 @@ class TelegramBot(object):
             user = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.get_user_by_telegram_id, telegram_id), self.logger)
             self.logger.info(f'Received message "{message}" from user {user.full_name if user else "<unregistered>"}')
             if message.startswith('/start'):
-                reply = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.handle_new_conversation, chat_id, user, message), self.logger)
+                reply = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.handle_new_bot_conversation, chat_id, user, message), self.logger)
             else:
                 reply = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.handle_bot_message, chat_id, user, message), self.logger)
             if isinstance(reply, ReplyMarkdownWithKeyboard):

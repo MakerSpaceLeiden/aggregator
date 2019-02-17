@@ -237,6 +237,9 @@ class Aggregator(object):
     def handle_bot_message(self, chat_id, user, message, logger):
         return self.bot_logic.handle_message(chat_id, user, message, logger)
 
+    def handle_new_bot_conversation(self, chat_id, user, message, logger):
+        return self.bot_logic.handle_new_conversation(chat_id, user, message, logger)
+
     def machine_state(self, machine, state, logger):
         if state == 'ready':
             state_on = self.redis_adapter.get_machine_on(machine, logger)
