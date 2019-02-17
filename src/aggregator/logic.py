@@ -234,8 +234,8 @@ class Aggregator(object):
         # Not implemented yet
         pass
 
-    def handle_bot_message(self, chat_id, command, logger):
-        return self.bot_logic.handle_message(chat_id, command, logger)
+    def handle_bot_message(self, chat_id, user, message, logger):
+        return self.bot_logic.handle_message(chat_id, user, message, logger)
 
     def machine_state(self, machine, state, logger):
         if state == 'ready':
