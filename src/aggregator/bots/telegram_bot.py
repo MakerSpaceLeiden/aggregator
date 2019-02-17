@@ -10,10 +10,12 @@ class TelegramBot(object):
         self.worker_input_queue = worker_input_queue
         self.aggregator = aggregator
         self.updater = Updater(api_token)
-        self.aggregator.bot_logic.send_message.plug(self._send_message_markdown_to_user)
+        self.aggregator.telegram_bot = self
 
-    def _send_message_markdown_to_user(self, user, markdown, logger):
-        self.updater.bot.send_message(user.telegram_user_id, text=markdown)
+    def send_notification(self, user, notification, logger):
+        logger = logger.getLogger(subsystem='telegram_bot')
+        logger.info(f'Sending notification of type {notification.__class__.__name__} to user {user.user_id} {user.full_name}')
+        self.updater.bot.send_message(user.telegram_user_id, text=notification.get_string_for_bot())
 
     def start_bot(self):
         self.logger.info('Starting Telegram BOT')
@@ -27,7 +29,7 @@ class TelegramBot(object):
 
     def handle_message(self, bot, update):
         try:
-            chat_id = str(update.message.chat_id)
+            chat_id = f'telegram-{update.message.chat_id}'
             message = update.message.text
             user = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.get_user_by_telegram_id, chat_id), self.logger)
             if message.startswith('/start'):

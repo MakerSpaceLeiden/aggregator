@@ -1,6 +1,6 @@
 import random
 from collections import defaultdict
-from .model import ALL_LIGHTS, history_line_to_json, get_history_line_description, UserEntered, UserLeft
+from .model import ALL_LIGHTS, history_line_to_json, get_history_line_description, UserEntered, UserLeft, StaleCheckoutNotification, MachineLeftOnNotification
 from .bots.bot_logic import BotLogic
 
 
@@ -12,6 +12,8 @@ class Aggregator(object):
         self.clock = clock
         self.checkin_stale_after_hours = checkin_stale_after_hours
         self.bot_logic = BotLogic(self)
+        self.telegram_bot = None
+        self.signal_bot = None
 
     def _get_user_by_id(self, user_id, logger):
         user = self.redis_adapter.get_user_by_id(user_id, logger)
@@ -49,6 +51,16 @@ class Aggregator(object):
             all_users = self.mysql_adapter.get_all_users(logger)
             self.redis_adapter.set_users_by_ids(all_users, logger)
             filtered_users = [u for u in all_users if u.telegram_user_id == telegram_id]
+            if len(filtered_users) == 1:
+                user = filtered_users[0]
+        return user
+
+    def get_user_by_phone_number(self, phone_number, logger):
+        user = self.redis_adapter.get_user_by_phone_number(phone_number, logger)
+        if not user:
+            all_users = self.mysql_adapter.get_all_users(logger)
+            self.redis_adapter.set_users_by_ids(all_users, logger)
+            filtered_users = [u for u in all_users if u.phone_number == phone_number]
             if len(filtered_users) == 1:
                 user = filtered_users[0]
         return user
@@ -155,11 +167,19 @@ class Aggregator(object):
         user = self._get_user_by_id(user_id, logger)
         logger.info(f'Checking out stale user {user.full_name if user else user_id} after {int(elapsed_time_in_hours)} hours')
         self.redis_adapter.remove_user_from_space(user_id, logger)
-        try:
-            if user.uses_telegram():
-                self.bot_logic.send_stale_checkout_notification(user, ts_checkin, logger)
-        except Exception:
-            logger.exception('Unexpected exception when trying to notify user (1)')
+        self._send_user_notification(user, StaleCheckoutNotification(ts_checkin), logger)
+
+    def _send_user_notification(self, user, notification, logger):
+        if self.telegram_bot and user.uses_telegram_bot():
+            try:
+                self.telegram_bot.send_notification(user, notification, logger)
+            except Exception:
+                logger.exception('Unexpected exception when trying to notify user via Telegram')
+        if self.signal_bot and user.uses_signal_bot():
+            try:
+                self.signal_bot.send_notification(user, notification, logger)
+            except Exception:
+                logger.exception('Unexpected exception when trying to notify user via Signal')
 
     def user_activated_machine(self, user_id, machine, logger):
         logger = logger.getLogger(subsystem='aggregator')
@@ -228,9 +248,6 @@ class Aggregator(object):
     def _warn_user_of_machine_left_on(self, machine_name, user_id, logger):
         user = self._get_user_by_id(user_id, logger)
         logger.info(f'Warning user {user.full_name if user else user_id} that machine {machine_name} was left on')
-        try:
-            if user and user.uses_telegram():
-                machine = self._get_machine_by_name(machine_name, logger)
-                self.bot_logic.send_machine_left_on_notification(user, machine, logger)
-        except Exception:
-            logger.exception('Unexpected exception when trying to notify user (2)')
+        if user:
+            machine = self._get_machine_by_name(machine_name, logger)
+            self._send_user_notification(user, MachineLeftOnNotification(machine), logger)

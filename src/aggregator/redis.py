@@ -59,6 +59,10 @@ class RedisAdapter(object):
             if len(telegram_users) > 0:
                 self.redis.hmset(self._k_users_by_telegram_id(), dict((user.telegram_user_id, json.dumps(user._asdict())) for user in telegram_users))
                 self.redis.pexpire(self._k_users_by_telegram_id(), self.users_expiration_time_in_sec * 1000)
+            users_with_phone_number = [u for u in users if u.phone_number]
+            if len(users_with_phone_number) > 0:
+                self.redis.hmset(self._k_users_by_phone_number(), dict((user.phone_number, json.dumps(user._asdict())) for user in users_with_phone_number))
+                self.redis.pexpire(self._k_users_by_phone_number(), self.users_expiration_time_in_sec * 1000)
 
     def store_user_in_space(self, user, ts, logger):
         logger = logger.getLogger(subsystem='redis')
@@ -171,6 +175,13 @@ class RedisAdapter(object):
         if data:
             return User(**json.loads(data))
 
+    def get_user_by_phone_number(self, phone_number, logger):
+        logger = logger.getLogger(subsystem='redis')
+        logger.info(f'Get user with phone number {phone_number}')
+        data = self.redis.hget(self._k_users_by_phone_number(), phone_number)
+        if data:
+            return User(**json.loads(data))
+
     def store_history_line(self, hl, logger):
         logger = logger.getLogger(subsystem='redis')
         logger.info(f'Storing history line of type {hl.__class__.__name__}')
@@ -228,6 +239,9 @@ class RedisAdapter(object):
 
     def _k_users_by_id(self):
         return f'{self.key_prefix}:ui'
+
+    def _k_users_by_phone_number(self):
+        return f'{self.key_prefix}:up'
 
     def _k_users_in_space(self):
         return f'{self.key_prefix}:us'

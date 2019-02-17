@@ -1,5 +1,4 @@
 from collections import namedtuple
-from aggregator.communication import PluggableMethodProxy
 
 ReplyMarkdownWithKeyboard = namedtuple('MarkdownReply', 'markdown next_commands')
 ReplyEndConversation = namedtuple('ReplyEndConversation', 'markdown')
@@ -27,13 +26,6 @@ class BotLogic(object):
     def __init__(self, aggregator):
         self.aggregator = aggregator
         self.chat_states = {}
-        self.send_message = PluggableMethodProxy()
-
-    def send_stale_checkout_notification(self, user, ts_checkin, logger):
-        self.send_message(user, f'Did you forget to checkout yesterday?\nYou entered the Space at {ts_checkin.human_str()}', logger)
-
-    def send_machine_left_on_notification(self, user, machine, logger):
-        self.send_message(user, f"You forgot to press the red button on the {machine.name}! But don't worry: it turned off automatically. Just don't forget next time. ;-)", logger)
 
     def handle_new_conversation(self, chat_id, user, message, logger):
         connection_token = get_connection_token_from_message(message)

@@ -68,15 +68,3 @@ class WorkerInputQueue(object):
 
     def get_next_task_blocking(self):
         return self.queue.get()
-
-
-class PluggableMethodProxy(object):
-    def __init__(self):
-        self._method = None
-
-    def __call__(self, *args, **kwargs):
-        if self._method:
-            self._method(*args, **kwargs)
-
-    def plug(self, method):
-        self._method = method

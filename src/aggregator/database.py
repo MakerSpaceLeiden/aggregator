@@ -22,7 +22,7 @@ class MySQLAdapter(object):
         logger.info('Reading all users')
         with self._connection() as db:
             mycursor = db.cursor()
-            mycursor.execute("SELECT id, first_name, last_name, email, telegram_user_id FROM members_user")
+            mycursor.execute("SELECT id, first_name, last_name, email, telegram_user_id, phone_number, uses_signal FROM members_user")
         return [User(*row) for row in mycursor]
 
     def get_all_machines(self, logger):

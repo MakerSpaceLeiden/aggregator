@@ -4,7 +4,7 @@ from .clock import Time
 
 # -- Domain objects ----
 
-class User(namedtuple('User', 'user_id first_name last_name email telegram_user_id')):
+class User(namedtuple('User', 'user_id first_name last_name email telegram_user_id phone_number uses_signal')):
     @property
     def full_name(self):
         return f'{self.first_name} {self.last_name}'
@@ -13,10 +13,15 @@ class User(namedtuple('User', 'user_id first_name last_name email telegram_user_
         d = dict(self._asdict())
         d['full_name'] = self.full_name
         del d['telegram_user_id']
+        del d['phone_number']
+        del d['uses_signal']
         return d
 
-    def uses_telegram(self):
+    def uses_telegram_bot(self):
         return bool(self.telegram_user_id)
+
+    def uses_signal_bot(self):
+        return self.uses_signal and self.phone_number
 
 
 Tag = namedtuple('Tag', 'tag_id tag user')
@@ -35,6 +40,24 @@ class Light(namedtuple('Light', 'label name')):
 ALL_LIGHTS = [
     Light('large_room', 'Large room'),
 ]
+
+
+# -- Messages ----
+
+class StaleCheckoutNotification(object):
+    def __init__(self, ts_checkin):
+        self.ts_checkin = ts_checkin
+
+    def get_string_for_bot(self):
+        return f'Did you forget to checkout yesterday?\nYou entered the Space at {self.ts_checkin.human_str()}'
+
+
+class MachineLeftOnNotification(object):
+    def __init__(self, machine):
+        self.machine = machine
+
+    def get_string_for_bot(self):
+        return f"You forgot to press the red button on the {self.machine.name}! But don't worry: it turned off automatically. Just don't forget next time. ;-)"
 
 
 # -- History lines ----
