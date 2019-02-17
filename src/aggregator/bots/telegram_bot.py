@@ -29,9 +29,10 @@ class TelegramBot(object):
 
     def handle_message(self, bot, update):
         try:
-            chat_id = f'telegram-{update.message.chat_id}'
+            telegram_id = update.message.chat_id
+            chat_id = f'telegram-{telegram_id}'
             message = update.message.text
-            user = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.get_user_by_telegram_id, chat_id), self.logger)
+            user = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.get_user_by_telegram_id, telegram_id), self.logger)
             self.logger.info(f'Received message "{message}" from user {user.full_name if user else "<unregistered>"}')
             if message.startswith('/start'):
                 reply = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.handle_new_conversation, chat_id, user, message), self.logger)

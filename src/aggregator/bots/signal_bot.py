@@ -38,8 +38,9 @@ class SignalBot(object):
     @ravel.signal(name=SIGNAL_NAME, in_signature=IN_SIGNATURE)
     def handle_message(self, msgid, sender, groupIDs, message, attachments):
         try:
-            chat_id = f'signal-{sender}'
-            user = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.get_user_by_phone_number, chat_id), self.logger)
+            phone_number = sender
+            chat_id = f'signal-{phone_number}'
+            user = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.get_user_by_phone_number, phone_number), self.logger)
             reply = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.handle_bot_message, chat_id, user, message), self.logger)
             if isinstance(reply, ReplyMarkdownWithKeyboard):
                 self._send_message(reply.markdown, [], [sender])
