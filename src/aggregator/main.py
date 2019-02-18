@@ -97,12 +97,14 @@ def _main(config):
         telegram_bot = None
 
     # Start Signal BOT
+    signal_bot = None
     if config.get('signal_bot'):
-        from aggregator.bots.signal_bot import SignalBot
-        signal_bot = SignalBot(worker_input_queue, aggregator, logger, loop)
-        signal_bot.start_bot()
-    else:
-        signal_bot = None
+        try:
+            from aggregator.bots.signal_bot import SignalBot
+            signal_bot = SignalBot(worker_input_queue, aggregator, logger, loop)
+            signal_bot.start_bot()
+        except Exception:
+            logger.exception('Unexpected error while starting Signal BOT')
 
     # Start cronjobs
     if 'check_stale_checkins' in config:
