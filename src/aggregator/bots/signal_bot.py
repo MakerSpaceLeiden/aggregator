@@ -1,5 +1,4 @@
 from functools import partial
-from .bot_logic import MessageOnboarding
 import ravel
 
 
