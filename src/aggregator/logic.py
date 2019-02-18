@@ -45,6 +45,13 @@ class Aggregator(object):
 
     # --------------------------------------------------
 
+    def make_new_telegram_association_for_user(self, current_user, connection_token, telegram_id, logger):
+        if current_user:
+            # Clear current association (if there is one)
+            self.delete_telegram_id_for_user(current_user.user_id, logger)
+        connecting_user = self.register_user_by_telegram_token(connection_token, telegram_id, logger)
+        return connecting_user
+
     def get_user_by_telegram_id(self, telegram_id, logger):
         user = self.redis_adapter.get_user_by_telegram_id(telegram_id, logger)
         if not user:

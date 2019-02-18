@@ -32,12 +32,17 @@ class TelegramBot(object):
             telegram_id = update.message.chat_id
             chat_id = f'telegram-{telegram_id}'
             message = update.message.text
-            user = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.get_user_by_telegram_id, telegram_id), self.logger)
+            user = self._get_user_by_telegram_id(telegram_id)
             self.logger.info(f'Received message "{message}" from user {user.full_name if user else "<unregistered>"}')
             if message.startswith('/start'):
-                reply = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.handle_new_bot_conversation, chat_id, user, message), self.logger)
+                connection_token = get_connection_token_from_message(message)
+                if connection_token:
+                    user = self._make_new_telegram_association_for_user(user, connection_token, telegram_id)
+                    reply = self._handle_new_bot_conversation(chat_id, user, message)
+                else:
+                    reply = self._handle_bot_message(chat_id, user, message)
             else:
-                reply = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.handle_bot_message, chat_id, user, message), self.logger)
+                reply = self._handle_bot_message(chat_id, user, message)
             if isinstance(reply, ReplyMarkdownWithKeyboard):
                 update.message.reply_markdown(reply.markdown, reply_markup=ReplyKeyboardMarkup(reply.next_commands, one_time_keyboard=True))
             elif isinstance(reply, ReplyEndConversation):
@@ -54,3 +59,25 @@ class TelegramBot(object):
 
     def _error(self, bot, update, error):
         self.logger.error(f'Update "{update}" caused error "{error}"', error)
+
+    # -- Proxied aggregator methods (via worker_input_queue) ----
+
+    def _make_new_telegram_association_for_user(self, current_user, connection_token, telegram_id):
+        return self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.make_new_telegram_association_for_user, current_user, connection_token, telegram_id), self.logger)
+
+    def _get_user_by_telegram_id(self, telegram_id):
+        return self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.get_user_by_telegram_id, telegram_id), self.logger)
+
+    def _handle_new_bot_conversation(self, chat_id, user, message):
+        return self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.handle_new_bot_conversation, chat_id, user, message), self.logger)
+
+    def _handle_bot_message(self, chat_id, user, message):
+        return self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.handle_bot_message, chat_id, user, message), self.logger)
+
+
+def get_connection_token_from_message(message):
+    if message.startswith('/start'):
+        parts = message.split(' ', 1)
+        if len(parts) > 1:
+            authorization_token = parts[1]
+            return authorization_token

@@ -28,20 +28,9 @@ class BotLogic(object):
         self.chat_states = {}
 
     def handle_new_conversation(self, chat_id, user, message, logger):
-        connection_token = get_connection_token_from_message(message)
-        if connection_token:
-            # Clean up old association
-            if user:
-                self.aggregator.delete_telegram_id_for_user(user.user_id, logger)
-            connecting_user = self.aggregator.register_user_by_telegram_token(connection_token, chat_id, logger)
-            if connecting_user:
-                return self._handle_state_onboarding(chat_id, connecting_user, logger)
-            return self._handle_state_not_registered(chat_id, logger)
-        else:
-            if user:
-                return self._handle_state_main(chat_id, user, logger)
-            else:
-                return self._handle_state_not_registered(chat_id, logger)
+        if user:
+            return self._handle_state_onboarding(chat_id, user, logger)
+        return self._handle_state_not_registered(chat_id, logger)
 
     def handle_message(self, chat_id, user, message, logger):
         state = self.chat_states.get(chat_id)
@@ -91,7 +80,7 @@ class BotLogic(object):
 
         markdown = (f"Hi {user.first_name}.\n"
                     f'''The space is {'*OPEN*' if space_status["space_open"] or True else "closed"}.\n\n'''
-                    f"{len(space_status['users_in_space'])} makers at the Space:\n"
+                    f"Latest checkins today:\n"
                     f"{CR.join(' - {0} (_{1}_ - {2})'.format(user_data['user']['full_name'], user_data['ts_checkin_human'], user_data['ts_checkin']) for user_data in space_status['users_in_space'])}"
                     )
         return ReplyMarkdownWithKeyboard(markdown, COMMANDS_MAIN)
@@ -102,11 +91,3 @@ class BotLogic(object):
 
     def _handle_unknown_message(self, chat_id, commands, logger):
         return ReplyMarkdownWithKeyboard("Sorry, I don't understand that.", commands)
-
-
-def get_connection_token_from_message(message):
-    if message.startswith('/start'):
-        parts = message.split(' ', 1)
-        if len(parts) > 1:
-            authorization_token = parts[1]
-            return authorization_token
