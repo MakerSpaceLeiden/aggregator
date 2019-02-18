@@ -36,8 +36,6 @@ def _main(config):
     from aggregator.logging import configure_logging
     from aggregator.worker import Worker
     from aggregator.clock import Clock
-    from aggregator.bots.telegram_bot import TelegramBot
-    from aggregator.bots.signal_bot import SignalBot
     from aggregator.communication import HttpServerInputMessageQueue, WorkerInputQueue
 
     logger, logging_handler = configure_logging(**config.get('logging', {}))
@@ -92,14 +90,19 @@ def _main(config):
 
     # Start Telegram BOT
     if config.get('telegram_bot'):
+        from aggregator.bots.telegram_bot import TelegramBot
         telegram_bot = TelegramBot(worker_input_queue, aggregator, logger, **config['telegram_bot'])
         telegram_bot.start_bot()
     else:
         telegram_bot = None
 
     # Start Signal BOT
-    signal_bot = SignalBot(worker_input_queue, aggregator, logger, loop)
-    signal_bot.start_bot()
+    if config.get('signal_bot'):
+        from aggregator.bots.signal_bot import SignalBot
+        signal_bot = SignalBot(worker_input_queue, aggregator, logger, loop)
+        signal_bot.start_bot()
+    else:
+        signal_bot = None
 
     # Start cronjobs
     if 'check_stale_checkins' in config:
@@ -119,5 +122,6 @@ def _main(config):
     # Quit the application
     if telegram_bot:
         telegram_bot.stop_bot()
-    signal_bot.stop_bot()
+    if signal_bot:
+        signal_bot.stop_bot()
     mqtt_listener_client.stop()

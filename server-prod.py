@@ -66,6 +66,9 @@ CONFIG = {
     'telegram_bot': {
         'api_token': os.environ['TELEGRAM_BOT_API'],
     },
+
+    'signal_bot': {
+    },
 }
 
 
