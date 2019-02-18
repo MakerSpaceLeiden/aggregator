@@ -28,7 +28,7 @@ class TelegramBot(object):
 
     def handle_message(self, bot, update):
         try:
-            telegram_id = update.message.chat_id
+            telegram_id = update.message.chat_id.decode('utf-8')
             chat_id = f'telegram-{telegram_id}'
             message = update.message.text
             user = self._get_user_by_telegram_id(telegram_id)
