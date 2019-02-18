@@ -32,9 +32,9 @@ class BotLogic(object):
                 return MessageWho(user, space_status)
             elif normalized_message == COMMAND_HELP.text:
                 return MessageHelp(user, BASIC_COMMANDS)
-            elif normalized_message == COMMAND_OUT:
+            elif normalized_message == COMMAND_OUT.text:
                 return self._handle_checkout(chat_id, user, logger)
-            elif normalized_message == COMMAND_CHECKIN:
+            elif normalized_message == COMMAND_CHECKIN.text:
                 self.aggregator.user_entered_space(user.user_id, logger)
                 space_status = self.aggregator.get_space_state_for_json(logger)
                 return MessageWho(user, space_status)
