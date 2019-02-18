@@ -1,7 +1,7 @@
 import random
 from collections import defaultdict
 from .model import ALL_LIGHTS, history_line_to_json, get_history_line_description, UserEntered, UserLeft
-from .messages import StaleCheckoutNotification, MachineLeftOnNotification, MessageHelp
+from .messages import StaleCheckoutNotification, MachineLeftOnNotification, MessageHelp, ALL_COMMANDS
 from .bots.bot_logic import BotLogic
 
 
@@ -253,7 +253,7 @@ class Aggregator(object):
         logger = logger.getLogger(subsystem='aggregator')
         user = self._get_user_by_id(user_id, logger)
         if self.signal_bot:
-            self.signal_bot.send_notification(user, MessageHelp(user), logger)
+            self.signal_bot.send_notification(user, MessageHelp(user, ALL_COMMANDS), logger)
 
     def machine_state(self, machine, state, logger):
         if state == 'ready':
