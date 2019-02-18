@@ -1,5 +1,5 @@
 from functools import partial
-from .bot_logic import ReplyMarkdownWithKeyboard, ReplyEndConversation
+from .bot_logic import MessageOnboarding
 import ravel
 
 
@@ -23,6 +23,12 @@ class SignalBot(object):
         logger = logger.getLogger(subsystem='signal_bot')
         logger.info(f'Sending notification of type {notification.__class__.__name__} to user {user.user_id} {user.full_name}')
         self._send_message(notification.get_string_for_bot(), [], [user.phone_number])
+
+    def onboard_new_user(self, user, logger):
+        logger = logger.getLogger(subsystem='signal_bot')
+        logger.info(f'Sending onboarding message to user {user.user_id} {user.full_name}')
+        text = MessageOnboarding(user).get_text()
+        self._send_message(text, [], [user.phone_number])
 
     def start_bot(self):
         self.logger.info('Starting Signal BOT')

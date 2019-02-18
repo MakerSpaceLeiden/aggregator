@@ -1,7 +1,5 @@
 from collections import namedtuple
 
-ReplyMarkdownWithKeyboard = namedtuple('MarkdownReply', 'markdown next_commands')
-ReplyEndConversation = namedtuple('ReplyEndConversation', 'markdown')
 
 Command = namedtuple('Command', 'text description')
 

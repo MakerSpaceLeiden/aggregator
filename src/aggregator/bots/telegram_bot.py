@@ -1,7 +1,6 @@
 from functools import partial
 from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove)
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters)
-from .bot_logic import ReplyMarkdownWithKeyboard, ReplyEndConversation
 
 
 class TelegramBot(object):

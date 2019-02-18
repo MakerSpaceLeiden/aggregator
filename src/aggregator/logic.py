@@ -248,6 +248,12 @@ class Aggregator(object):
     def handle_new_bot_conversation(self, chat_id, user, message, logger):
         return self.bot_logic.handle_new_conversation(chat_id, user, message, logger)
 
+    def onboard_new_signal_user(self, user_id, logger):
+        logger = logger.getLogger(subsystem='aggregator')
+        user = self._get_user_by_id(user_id, logger)
+        if self.signal_bot:
+            self.signal_bot.onboard_new_user(user, logger)
+
     def machine_state(self, machine, state, logger):
         if state == 'ready':
             state_on = self.redis_adapter.get_machine_on(machine, logger)

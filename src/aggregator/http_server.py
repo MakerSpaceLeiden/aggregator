@@ -90,6 +90,14 @@ def run_http_server(loop, input_message_queue, aggregator, worker_input_queue, l
         await worker_input_queue.add_task_with_result_future(partial(aggregator.delete_telegram_id_for_user, request_payload['user_id']), request.logger)
         return Response('Ok', mimetype='text/plain')
 
+    @app.route('/signal/onboard', methods=['POST'])
+    @with_basic_auth
+    async def signal_onboard():
+        request_body = await request.get_data()
+        request_payload = json.loads(request_body)
+        await worker_input_queue.add_task_with_result_future(partial(aggregator.onboard_new_signal_user, request_payload['user_id']), request.logger)
+        return Response('Ok', mimetype='text/plain')
+
     # -- Web Socket -----
 
     # async def ws_sending():
