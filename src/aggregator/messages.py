@@ -92,7 +92,7 @@ class MessageConfirmCheckout(BaseBotMessage):
         self.ts_checkin = ts_checkin
 
     def get_text(self):
-        return f"So, {self.user.first_name}, it looks like you checked into the Space at {self.ts_checkin.human_str()}. Do you want to check-out now?"
+        return f"So, {self.user.first_name}, it looks like you checked into the Space at {self.ts_checkin.human_str()}.\nDo you want to check-out now?"
 
 
 class MessageConfirmedCheckout(BaseBotMessage):
