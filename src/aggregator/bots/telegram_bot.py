@@ -14,7 +14,7 @@ class TelegramBot(object):
     def send_notification(self, user, notification, logger):
         logger = logger.getLogger(subsystem='telegram_bot')
         logger.info(f'Sending notification of type {notification.__class__.__name__} to user {user.user_id} {user.full_name}')
-        self.updater.bot.send_message(user.telegram_user_id, text=notification.get_string_for_bot())
+        self._send_message(notification, user.telegram_user_id)
 
     def start_bot(self):
         self.logger.info('Starting Telegram BOT')
@@ -45,11 +45,14 @@ class TelegramBot(object):
             if not reply:
                 self.logger.error('Missing reply from BOT logic')
             else:
-                markdown = reply.get_markdown()
-                reply_markup = ReplyKeyboardMarkup([[command.text for command in reply.next_commands]], one_time_keyboard=True) if reply.next_commands else ReplyKeyboardRemove()
-                update.message.reply_markdown(markdown, reply_markup=reply_markup)
+                self._send_message(reply, telegram_id)
         except Exception:
             self.logger.exception(f'Unexpected exception in message handler')
+
+    def _send_message(self, message, telegram_user_id):
+        markdown = message.get_markdown()
+        reply_markup = ReplyKeyboardMarkup([[command.text for command in message.next_commands]], one_time_keyboard=True) if message.next_commands else ReplyKeyboardRemove()
+        self.updater.bot.send_message(telegram_user_id, markdown, reply_markup=reply_markup)
 
     def stop_bot(self):
         self.logger.info('Stopping Telegram BOT')

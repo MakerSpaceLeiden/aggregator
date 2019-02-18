@@ -22,13 +22,7 @@ class SignalBot(object):
     def send_notification(self, user, notification, logger):
         logger = logger.getLogger(subsystem='signal_bot')
         logger.info(f'Sending notification of type {notification.__class__.__name__} to user {user.user_id} {user.full_name}')
-        self._send_message(notification.get_string_for_bot(), [], [user.phone_number])
-
-    def onboard_new_user(self, user, logger):
-        logger = logger.getLogger(subsystem='signal_bot')
-        logger.info(f'Sending onboarding message to user {user.user_id} {user.full_name}')
-        text = MessageOnboarding(user).get_text()
-        self._send_message(text, [], [user.phone_number])
+        self._send_message(notification, user.phone_number)
 
     def start_bot(self):
         self.logger.info('Starting Signal BOT')
@@ -51,14 +45,14 @@ class SignalBot(object):
             if not reply:
                 self.logger.error('Missing reply from BOT logic')
             else:
-                text = reply.get_text()
-                self._send_message(text, [], [sender])
+                self._send_message(reply, sender)
         except Exception:
             self.logger.exception(f'Unexpected exception in message handler')
 
-    def _send_message(self, body, attachments, destinations):
+    def _send_message(self, message, phone_number):
+        body = message.get_text()
         ep = self.bus[BUS_NAME][PATH_NAME].get_interface(IFACE_NAME)
-        ep.sendMessage(body, attachments, destinations)
+        ep.sendMessage(body, [], [phone_number])
 
     def stop_bot(self):
         self.logger.info('Stopping Signal BOT')

@@ -42,24 +42,6 @@ ALL_LIGHTS = [
 ]
 
 
-# -- Messages ----
-
-class StaleCheckoutNotification(object):
-    def __init__(self, ts_checkin):
-        self.ts_checkin = ts_checkin
-
-    def get_string_for_bot(self):
-        return f'Did you forget to checkout yesterday?\nYou entered the Space at {self.ts_checkin.human_str()}'
-
-
-class MachineLeftOnNotification(object):
-    def __init__(self, machine):
-        self.machine = machine
-
-    def get_string_for_bot(self):
-        return f"You forgot to press the red button on the {self.machine.name}! But don't worry: it turned off automatically. Just don't forget next time. ;-)"
-
-
 # -- History lines ----
 
 
