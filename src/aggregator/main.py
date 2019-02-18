@@ -89,12 +89,14 @@ def _main(config):
     worker.start_working_in_background_thread()
 
     # Start Telegram BOT
+    telegram_bot = None
     if config.get('telegram_bot'):
-        from aggregator.bots.telegram_bot import TelegramBot
-        telegram_bot = TelegramBot(worker_input_queue, aggregator, logger, **config['telegram_bot'])
-        telegram_bot.start_bot()
-    else:
-        telegram_bot = None
+        try:
+            from aggregator.bots.telegram_bot import TelegramBot
+            telegram_bot = TelegramBot(worker_input_queue, aggregator, logger, **config['telegram_bot'])
+            telegram_bot.start_bot()
+        except Exception:
+            logger.exception('Unexpected error while starting Telegram BOT')
 
     # Start Signal BOT
     signal_bot = None
