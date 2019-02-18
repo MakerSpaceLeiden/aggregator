@@ -43,12 +43,12 @@ class TelegramBot(object):
                     reply = self._handle_bot_message(chat_id, user, message)
             else:
                 reply = self._handle_bot_message(chat_id, user, message)
-            if isinstance(reply, ReplyMarkdownWithKeyboard):
-                update.message.reply_markdown(reply.markdown, reply_markup=ReplyKeyboardMarkup(reply.next_commands, one_time_keyboard=True))
-            elif isinstance(reply, ReplyEndConversation):
-                update.message.reply_markdown(reply.markdown, reply_markup=ReplyKeyboardRemove())
+            if not reply:
+                self.logger.error('Missing reply from BOT logic')
             else:
-                self.logger.error(f'Invalid reaction from BOT logic: {repr(reply)}')
+                markdown = reply.get_markdown()
+                reply_markup = ReplyKeyboardMarkup([[command.text for command in reply.next_commands]], one_time_keyboard=True) if reply.next_commands else ReplyKeyboardRemove()
+                update.message.reply_markdown(markdown, reply_markup=reply_markup)
         except Exception:
             self.logger.exception(f'Unexpected exception in message handler')
 
@@ -72,6 +72,7 @@ class TelegramBot(object):
         return self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.handle_new_bot_conversation, chat_id, user, message), self.logger)
 
     def _handle_bot_message(self, chat_id, user, message):
+        message = message.lstrip('/')
         return self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.handle_bot_message, chat_id, user, message), self.logger)
 
 
