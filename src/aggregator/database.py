@@ -60,6 +60,16 @@ class MySQLAdapter(object):
             ''', (telegram_user_id, user_id))
             db.commit()
 
+    def delete_telegram_user_id_for_user_id(self, user_id, logger):
+        logger = logger.getLogger(subsystem='mysql')
+        logger.info(f'Clearing Telegram User ID for user {user_id}')
+        with self._connection() as db:
+            mycursor = db.cursor()
+            mycursor.execute('''
+                UPDATE members_user SET telegram_user_id = NULL WHERE id = %s
+            ''', (user_id,))
+            db.commit()
+
 
 class MockDatabaseAdapter(object):
     def __init__(self, all_users, all_machines):

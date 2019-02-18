@@ -53,12 +53,17 @@ class RedisAdapter(object):
         logger = logger.getLogger(subsystem='redis')
         if len(users) > 0:
             logger.info(f'Storing {len(users)} users')
+            self.redis.delete(self._k_users_by_id())
             self.redis.hmset(self._k_users_by_id(), dict((str(user.user_id), json.dumps(user._asdict())) for user in users))
             self.redis.pexpire(self._k_users_by_id(), self.users_expiration_time_in_sec * 1000)
+
+            self.redis.delete(self._k_users_by_telegram_id())
             telegram_users = [u for u in users if u.telegram_user_id]
             if len(telegram_users) > 0:
                 self.redis.hmset(self._k_users_by_telegram_id(), dict((user.telegram_user_id, json.dumps(user._asdict())) for user in telegram_users))
                 self.redis.pexpire(self._k_users_by_telegram_id(), self.users_expiration_time_in_sec * 1000)
+
+            self.redis.delete(self._k_users_by_phone_number())
             users_with_phone_number = [u for u in users if u.phone_number]
             if len(users_with_phone_number) > 0:
                 self.redis.hmset(self._k_users_by_phone_number(), dict((user.phone_number, json.dumps(user._asdict())) for user in users_with_phone_number))

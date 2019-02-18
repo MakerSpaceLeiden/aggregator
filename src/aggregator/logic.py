@@ -238,8 +238,9 @@ class Aggregator(object):
             return user
 
     def delete_telegram_id_for_user(self, user_id, logger):
-        # Not implemented yet
-        pass
+        self.mysql_adapter.delete_telegram_user_id_for_user_id(user_id, logger)
+        all_users = self.mysql_adapter.get_all_users(logger)
+        self.redis_adapter.set_users_by_ids(all_users, logger)
 
     def handle_bot_message(self, chat_id, user, message, logger):
         return self.bot_logic.handle_message(chat_id, user, message, logger)
