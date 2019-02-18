@@ -8,8 +8,8 @@ Command = namedtuple('Command', 'text description')
 CR = '\n'
 
 
-COMMAND_WHO = Command('who', 'Show the last checkins at the space'),
-COMMAND_HELP = Command('help', 'Show the available commands'),
+COMMAND_WHO = Command('who', 'Show the last checkins at the space')
+COMMAND_HELP = Command('help', 'Show the available commands')
 ALL_COMMANDS = (COMMAND_WHO, COMMAND_HELP)
 
 STATE_ONBOARDING, STATE_MAIN = range(2)
@@ -120,6 +120,8 @@ class MessageUnknown(BaseBotMessage):
 
 
 class MessageHelp(BaseBotMessage):
+    next_commands = ALL_COMMANDS
+
     def __init__(self, user, commands):
         self.user = user
         self.commands = commands

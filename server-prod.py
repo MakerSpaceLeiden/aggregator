@@ -68,6 +68,7 @@ CONFIG = {
     },
 
     'signal_bot': {
+        'some': 'config',
     },
 }
 

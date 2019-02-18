@@ -97,6 +97,7 @@ def _main(config):
         telegram_bot = None
 
     # Start Signal BOT
+    logger.info(f'config: {repr(config)}')
     if config.get('signal_bot'):
         from aggregator.bots.signal_bot import SignalBot
         signal_bot = SignalBot(worker_input_queue, aggregator, logger, loop)
