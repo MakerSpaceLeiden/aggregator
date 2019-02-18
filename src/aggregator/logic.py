@@ -1,7 +1,7 @@
 import random
 from collections import defaultdict
 from .model import ALL_LIGHTS, history_line_to_json, get_history_line_description, UserEntered, UserLeft
-from .messages import StaleCheckoutNotification, MachineLeftOnNotification, MessageHelp, ALL_COMMANDS
+from .messages import StaleCheckoutNotification, MachineLeftOnNotification, MessageHelp, BASIC_COMMANDS
 from .bots.bot_logic import BotLogic
 
 
@@ -95,6 +95,12 @@ class Aggregator(object):
         logger.info(f'user_left_space: {user.full_name}')
         self.redis_adapter.user_left_space(user, logger)
         self.redis_adapter.store_history_line(UserLeft(user_id, self.clock.now(), user.first_name, user.last_name), logger)
+
+    def is_user_id_in_space(self, user_id, logger):
+        for user_id_in_space, ts_checkin in self.redis_adapter.get_user_ids_in_space_with_timestamps(logger):
+            if user_id_in_space == user_id:
+                return True, ts_checkin
+        return False, None
 
     def get_space_state_for_json(self, logger):
         logger = logger.getLogger(subsystem='aggregator')
@@ -253,7 +259,7 @@ class Aggregator(object):
         logger = logger.getLogger(subsystem='aggregator')
         user = self._get_user_by_id(user_id, logger)
         if self.signal_bot:
-            self.signal_bot.send_notification(user, MessageHelp(user, ALL_COMMANDS), logger)
+            self.signal_bot.send_notification(user, MessageHelp(user, BASIC_COMMANDS), logger)
 
     def machine_state(self, machine, state, logger):
         if state == 'ready':

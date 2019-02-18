@@ -5,9 +5,16 @@ from collections import namedtuple
 Command = namedtuple('Command', 'text description')
 
 
-COMMAND_WHO = Command('who', 'Show the last checkins at the space')
+COMMAND_WHO = Command('who', 'Show the last checkins at the Space')
 COMMAND_HELP = Command('help', 'Show the available commands')
-ALL_COMMANDS = (COMMAND_WHO, COMMAND_HELP)
+COMMAND_OUT = Command('out', 'Check-out of the Space')
+COMMAND_CHECKIN = Command('checkin', 'Check-in to the Space')
+
+BASIC_COMMANDS = (COMMAND_WHO, COMMAND_HELP, COMMAND_OUT)
+
+COMMAND_YES = Command('yes', 'Yes')
+COMMAND_NO = Command('no', 'No')
+YES_NO_COMMANDS = (COMMAND_YES, COMMAND_NO)
 
 
 # -- Messages ----
@@ -16,7 +23,7 @@ CR = '\n'
 
 
 class BaseBotMessage(object):
-    next_commands = ALL_COMMANDS
+    next_commands = BASIC_COMMANDS
     message = ''
 
     def get_markdown(self):
@@ -67,6 +74,37 @@ class MessageHelp(BaseBotMessage):
             "I try to help where I can, reminding people to turn off machines, and stuff like that.\n"
             f'These are the commands you can type:\n{commands_text}'
         )
+
+
+class MessageUserNotInSpace(BaseBotMessage):
+    def __init__(self, user):
+        self.user = user
+
+    def get_text(self):
+        return f"{self.user.first_name}, it doesn't look like you are in the space in this moment."
+
+
+class MessageConfirmCheckout(BaseBotMessage):
+    next_commands = YES_NO_COMMANDS
+
+    def __init__(self, user, ts_checkin):
+        self.user = user
+        self.ts_checkin = ts_checkin
+
+    def get_text(self):
+        return f"So, {self.user.first_name}, it looks like you checked into the Space at {self.ts_checkin.human_str()}. Do you want to check-out now?"
+
+
+class MessageConfirmedCheckout(BaseBotMessage):
+    def __init__(self, user):
+        self.user = user
+
+    def get_text(self):
+        return f"Ok {self.user.first_name}, you are now checked out of the Space."
+
+
+class MessageCancelAction(BaseBotMessage):
+    message = 'Ok, never mind.'
 
 
 # -- Notifications ----
