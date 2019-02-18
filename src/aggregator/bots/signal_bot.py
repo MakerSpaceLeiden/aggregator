@@ -42,12 +42,11 @@ class SignalBot(object):
             chat_id = f'signal-{phone_number}'
             user = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.get_user_by_phone_number, phone_number), self.logger)
             reply = self.worker_input_queue.add_task_with_result_blocking(partial(self.aggregator.handle_bot_message, chat_id, user, message), self.logger)
-            if isinstance(reply, ReplyMarkdownWithKeyboard):
-                self._send_message(reply.markdown, [], [sender])
-            elif isinstance(reply, ReplyEndConversation):
-                self._send_message(reply.markdown, [], [sender])
+            if not reply:
+                self.logger.error('Missing reply from BOT logic')
             else:
-                self.logger.error(f'Invalid reaction from BOT logic: {repr(reply)}')
+                text = reply.get_text()
+                self._send_message(text, [], [sender])
         except Exception:
             self.logger.exception(f'Unexpected exception in message handler')
 
