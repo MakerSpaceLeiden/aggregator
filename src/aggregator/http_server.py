@@ -33,16 +33,19 @@ def run_http_server(loop, input_message_queue, aggregator, worker_input_queue, l
     def with_basic_auth(f):
         @wraps(f)
         def decorated(*args, **kwargs):
-            if not request.authorization or not (
-                    request.authorization.username == basic_auth['username'] and
-                    request.authorization.password == basic_auth['password']):
-                realm = basic_auth['realm']
-                request.logger.error(f'Wrong basic auth: username = {request.authorization.username if request.authorization else "n/a"}')
-                return Response(
-                    'Could not verify your access level for that URL.\n'
-                    'You have to login with proper credentials', 401,
-                    {'WWW-Authenticate': f'Basic realm="{realm}"'})
-            return f(*args, **kwargs)
+            try:
+                if not request.authorization or not (
+                        request.authorization.username == basic_auth['username'] and
+                        request.authorization.password == basic_auth['password']):
+                    realm = basic_auth['realm']
+                    request.logger.error(f'Wrong basic auth: username = {request.authorization.username if request.authorization else "n/a"}')
+                    return Response(
+                        'Could not verify your access level for that URL.\n'
+                        'You have to login with proper credentials', 401,
+                        {'WWW-Authenticate': f'Basic realm="{realm}"'})
+                return f(*args, **kwargs)
+            except:
+                logger.exception('Unexpected exception')
         return decorated
 
     # ------------------------------------
