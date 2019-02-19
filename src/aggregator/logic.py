@@ -270,7 +270,7 @@ class Aggregator(object):
     def send_notification_test(self, user_id, logger):
         logger = logger.getLogger(subsystem='aggregator')
         user = self._get_user_by_id(user_id, logger)
-        self._send_user_notification(user, TestNotification(user, BASIC_COMMANDS), logger)
+        self._send_user_notification(user, TestNotification(user), logger)
 
     def machine_state(self, machine, state, logger):
         if state == 'ready':
