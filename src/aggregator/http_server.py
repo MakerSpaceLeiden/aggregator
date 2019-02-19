@@ -100,7 +100,7 @@ def run_http_server(loop, input_message_queue, aggregator, worker_input_queue, l
 
     @app.route('/notification/test', methods=['POST'])
     @with_basic_auth
-    async def signal_onboard():
+    async def notification_test():
         request_body = await request.get_data()
         request_payload = json.loads(request_body)
         await worker_input_queue.add_task_with_result_future(partial(aggregator.send_notification_test, request_payload['user_id']), request.logger)
