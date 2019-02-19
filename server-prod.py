@@ -64,7 +64,7 @@ CONFIG = {
     },
 
     'email': {
-        'from_address': 'MakerSpace BOT <mslbot@makerspaceleiden.nl>',
+        'from_address': 'MakerSpace BOT <noc@makerspaceleiden.nl>',
     },
 
     'telegram_bot': {
