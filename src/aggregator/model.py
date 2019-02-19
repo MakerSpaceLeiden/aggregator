@@ -4,7 +4,7 @@ from .clock import Time
 
 # -- Domain objects ----
 
-class User(namedtuple('User', 'user_id first_name last_name email telegram_user_id phone_number uses_signal')):
+class User(namedtuple('User', 'user_id first_name last_name email telegram_user_id phone_number uses_signal always_uses_email')):
     @property
     def full_name(self):
         return f'{self.first_name} {self.last_name}'
@@ -15,6 +15,7 @@ class User(namedtuple('User', 'user_id first_name last_name email telegram_user_
         del d['telegram_user_id']
         del d['phone_number']
         del d['uses_signal']
+        del d['always_uses_email']
         return d
 
     def uses_telegram_bot(self):
@@ -22,6 +23,9 @@ class User(namedtuple('User', 'user_id first_name last_name email telegram_user_
 
     def uses_signal_bot(self):
         return self.uses_signal and self.phone_number
+
+    def uses_email(self):
+        return (not self.uses_telegram_bot and not self.uses_signal_bot()) or self.always_uses_email
 
 
 Tag = namedtuple('Tag', 'tag_id tag user')

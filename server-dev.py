@@ -46,6 +46,10 @@ CONFIG = {
         'stale_after_hours': 5,
     },
 
+    'email': {
+        'from_address': 'MakerSpace BOT <mslbot@makerspaceleiden.nl>',
+    },
+
     # 'telegram_bot': {
     #     'api_token': os.environ['TELEGRAM_BOT_API'],
     # },

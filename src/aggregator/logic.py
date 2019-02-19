@@ -1,12 +1,12 @@
 import random
 from collections import defaultdict
 from .model import ALL_LIGHTS, history_line_to_json, get_history_line_description, UserEntered, UserLeft
-from .messages import StaleCheckoutNotification, MachineLeftOnNotification, MessageHelp, BASIC_COMMANDS
+from .messages import StaleCheckoutNotification, MachineLeftOnNotification, MessageHelp, TestNotification, BASIC_COMMANDS
 from .bots.bot_logic import BotLogic
 
 
 class Aggregator(object):
-    def __init__(self, mysql_adapter, redis_adapter, notifications_queue, clock, checkin_stale_after_hours):
+    def __init__(self, mysql_adapter, redis_adapter, notifications_queue, clock, email_adapter, checkin_stale_after_hours):
         self.mysql_adapter = mysql_adapter
         self.redis_adapter = redis_adapter
         self.notifications_queue = notifications_queue
@@ -15,6 +15,7 @@ class Aggregator(object):
         self.bot_logic = BotLogic(self)
         self.telegram_bot = None
         self.signal_bot = None
+        self.email_adapter = email_adapter
 
     def _get_user_by_id(self, user_id, logger):
         user = self.redis_adapter.get_user_by_id(user_id, logger)
@@ -187,13 +188,18 @@ class Aggregator(object):
         if self.telegram_bot and user.uses_telegram_bot():
             try:
                 self.telegram_bot.send_notification(user, notification, logger)
-            except Exception:
+            except:
                 logger.exception('Unexpected exception when trying to notify user via Telegram')
         if self.signal_bot and user.uses_signal_bot():
             try:
                 self.signal_bot.send_notification(user, notification, logger)
-            except Exception:
+            except:
                 logger.exception('Unexpected exception when trying to notify user via Signal')
+        if user.uses_email():
+            try:
+                self.email_adapter.send_email(user, notification, logger)
+            except:
+                logger.exception('Unexpected exception when trying to notify user via email')
 
     def user_activated_machine(self, user_id, machine, logger):
         logger = logger.getLogger(subsystem='aggregator')
@@ -260,6 +266,11 @@ class Aggregator(object):
         user = self._get_user_by_id(user_id, logger)
         if self.signal_bot:
             self.signal_bot.send_notification(user, MessageHelp(user, BASIC_COMMANDS), logger)
+
+    def send_notification_test(self, user_id, logger):
+        logger = logger.getLogger(subsystem='aggregator')
+        user = self._get_user_by_id(user_id, logger)
+        self._send_user_notification(user, TestNotification(user, BASIC_COMMANDS), logger)
 
     def machine_state(self, machine, state, logger):
         if state == 'ready':

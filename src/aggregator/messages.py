@@ -32,6 +32,12 @@ class BaseBotMessage(object):
     def get_text(self):
         return self.message
 
+    def get_email_text(self):
+        return self.get_text()
+
+    def get_subject_for_email(self):
+        return f'Notification <{self.__class__.__name__}>'
+
 
 class MessageNotRegistered(BaseBotMessage):
     message = (
@@ -125,3 +131,22 @@ class MachineLeftOnNotification(BaseBotMessage):
     def get_text(self):
         return f"You forgot to press the red button on the {self.machine.name}! But don't worry: it turned off automatically. Just don't forget next time. ;-)"
 
+
+class TestNotification(BaseBotMessage):
+    def __init__(self, user):
+        self.user = user
+
+    def get_text(self):
+        return f"Hello {self.user.first_name}! This is a test notification from your friendly MakerSpace BOT. You can safely ignore it. Cheers!"
+
+    def get_email_text(self):
+        return (
+            f"Hello {self.user.first_name}!\n\n"
+            "This is a test notification from your friendly MakerSpace BOT.\n"
+            "You can safely ignore it.\n\n"
+            "Cheers!\n"
+            "The MakerSpace BOT"
+        )
+
+    def get_subject_for_email(self):
+        return 'Test notification'

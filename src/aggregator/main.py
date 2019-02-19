@@ -36,6 +36,7 @@ def _main(config):
     from aggregator.logging import configure_logging
     from aggregator.worker import Worker
     from aggregator.clock import Clock
+    from aggregator.email_adapter import EmailAdapter
     from aggregator.communication import HttpServerInputMessageQueue, WorkerInputQueue
 
     logger, logging_handler = configure_logging(**config.get('logging', {}))
@@ -71,12 +72,16 @@ def _main(config):
     # Clock
     clock = Clock()
 
+    # Email
+    email_adapter = EmailAdapter(**config['email'])
+
     # Application logic
     aggregator = Aggregator(
         MySQLAdapter(**config['mysql']),
         RedisAdapter(clock, **config['redis']),
         http_server_input_message_queue,
         clock,
+        email_adapter,
         config['check_stale_checkins']['stale_after_hours'] if 'check_stale_checkins' in config else 0,
     )
 
