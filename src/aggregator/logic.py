@@ -3,6 +3,7 @@ from collections import defaultdict
 from .model import ALL_LIGHTS, history_line_to_json, get_history_line_description, UserEntered, UserLeft
 from .messages import StaleCheckoutNotification, MachineLeftOnNotification, MessageHelp, TestNotification, BASIC_COMMANDS
 from .bots.bot_logic import BotLogic
+from .urls import Urls
 
 
 class Aggregator(object):
@@ -16,6 +17,7 @@ class Aggregator(object):
         self.telegram_bot = None
         self.signal_bot = None
         self.email_adapter = email_adapter
+        self.urls = Urls()
 
     def _get_user_by_id(self, user_id, logger):
         user = self.redis_adapter.get_user_by_id(user_id, logger)
@@ -182,7 +184,7 @@ class Aggregator(object):
         user = self._get_user_by_id(user_id, logger)
         logger.info(f'Checking out stale user {user.full_name if user else user_id} after {int(elapsed_time_in_hours)} hours')
         self.redis_adapter.remove_user_from_space(user_id, logger)
-        self._send_user_notification(user, StaleCheckoutNotification(ts_checkin), logger)
+        self._send_user_notification(user, StaleCheckoutNotification(user, ts_checkin, self.urls.notification_settings()), logger)
 
     def _send_user_notification(self, user, notification, logger):
         if self.telegram_bot and user.uses_telegram_bot():

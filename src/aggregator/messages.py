@@ -117,12 +117,27 @@ class MessageCancelAction(BaseBotMessage):
 
 
 class StaleCheckoutNotification(BaseBotMessage):
-    def __init__(self, ts_checkin):
+    def __init__(self, user, ts_checkin, notification_settings_url):
+        self.user = user
         self.ts_checkin = ts_checkin
+        self.notification_settings_url = notification_settings_url
 
     def get_text(self):
         return f'Did you forget to checkout yesterday?\nYou entered the Space at {self.ts_checkin.human_str()}'
 
+    def get_email_text(self):
+        return (
+            f"Hello {self.user.first_name},\n\n"
+            "It looks like you might have forgotten to checkout at the space yesterday?\n"
+            f"According to the logs you entered the space at {self.ts_checkin.human_str()}, but there's no trace of a checkout.\n\n"
+            "Checking out is useful so that other people know when to expect other fellow makers at the space, and it allows me to provide useful reminders, "
+            "like if the lights are still on when the last person leaves.\n\n"
+            "Checking out can be done when you leave, by simply swiping your card again, while you hold the door open on your way out.\n"
+            "Or it can also be done via the Chat BOT (Telegram or Signal). If you would like to use the Chat BOT, you can activate it from your personal data "
+            f"page in the CRM. This is the link: {self.notification_settings_url}\n\n"
+            "The MakerSpace BOT\n\n"
+            "PS. If you would rather receive these communications via the Chat BOT instead of email, you can configure your notification settings at the URL above."
+        )
 
 class MachineLeftOnNotification(BaseBotMessage):
     def __init__(self, machine):
