@@ -13,7 +13,7 @@ class EmailAdapter(object):
         logger.info(f'Sending email to {user.email}')
         try:
             ps = Popen(['/usr/sbin/sendmail', user.email], stdin=PIPE, stderr=PIPE)
-            ps.stdin.write(email_body.as_bytes())
+            ps.stdin.write(email_body.encode('utf-8'))
             (stdout, stderr) = ps.communicate()
         except:
             logger.exception('Unexpexted error while sending email')
