@@ -222,7 +222,7 @@ class Aggregator(object):
         user = self._get_user_by_id(user_id, logger)
         logger.info(f'Checking out stale user {user.full_name if user else user_id} after {int(elapsed_time_in_hours)} hours')
         self.redis_adapter.remove_user_from_space(user_id, logger)
-        notification = StaleCheckoutNotification(user, ts_checkin, self.urls.notification_settings())
+        notification = StaleCheckoutNotification(user, ts_checkin, self.urls.notification_settings(), self.urls.space_state())
         self.task_scheduler.schedule_task_at_time(self.clock.now().replace(hour=8, minute=0), partial(self._send_user_notification, user, notification), logger)
 
     def _send_user_notification(self, user, notification, logger):
