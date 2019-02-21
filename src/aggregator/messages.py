@@ -19,8 +19,6 @@ YES_NO_COMMANDS = (COMMAND_YES, COMMAND_NO)
 
 # -- Messages ----
 
-CR = '\n'
-
 
 class BaseBotMessage(object):
     next_commands = BASIC_COMMANDS
@@ -53,11 +51,15 @@ class MessageWho(BaseBotMessage):
         self.space_status = space_status
 
     def get_text(self):
-        return (
-            f'''{self.user.first_name}, the space is marked as {'OPEN' if self.space_status["space_open"] or True else "closed"}.\n'''
-            f"Latest checkins today:\n"
-            f"{CR.join(' - {0} ({1} - {2})'.format(user_data['user']['full_name'], user_data['ts_checkin_human'], user_data['ts_checkin']) for user_data in self.space_status['users_in_space'])}"
-        )
+        lines = [
+            f'''{self.user.first_name}, the space is marked as {'OPEN' if self.space_status["space_open"] or True else "closed"}.'''
+        ]
+        if not self.space_status['users_in_space']:
+            lines.append('Not seen anyone recently.')
+        else:
+            for user_data in self.space_status['users_in_space']:
+                lines.append(' - {0} ({1} - {2})'.format(user_data['user']['full_name'], user_data['ts_checkin_human'], user_data['ts_checkin']))
+        return '\n'.join(lines)
 
 
 class MessageUnknown(BaseBotMessage):
