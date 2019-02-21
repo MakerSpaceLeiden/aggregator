@@ -219,6 +219,22 @@ class TestApplicationLogic(unittest.TestCase):
         problems = [p.__class__.__name__ for p in self.bot_notification_objects[0].problems]
         self.assertEqual(problems, ['ProblemMachineLeftOnBySomeoneElse'])
 
+    def test_warn_user_when_he_leaves_lights_on(self):
+        self.aggregator.user_entered_space(STEFANO.user_id, self.logger)
+        self.aggregator.lights('large_room', True, self.logger)
+
+        self.aggregator.user_entered_space(BOB.user_id, self.logger)
+        self.aggregator.user_left_space(BOB.user_id, self.logger)
+
+        # No warning when BOB leaves because Stefano is still inside
+        self.assertEqual(self.bot_messages, [])
+
+        self.aggregator.user_left_space(STEFANO.user_id, self.logger)
+
+        self.assertEqual(self.bot_messages, [(1, 'ProblemsLeavingSpaceNotification')])
+        problems = [p.__class__.__name__ for p in self.bot_notification_objects[0].problems]
+        self.assertEqual(problems, ['ProblemLightLeftOn'])
+
     def test_machine_on_and_off(self):
         self.aggregator.user_entered_space(STEFANO.user_id, self.logger)
         space_state = self.aggregator.get_space_state_for_json(self.logger)

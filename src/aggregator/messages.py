@@ -240,3 +240,11 @@ class ProblemMachineLeftOnBySomeoneElse(object):
 class ProblemSpaceLeftOpen(object):
     def get_text(self):
         return f'The big switch (left of the door) was left on the OPEN position'
+
+
+class ProblemLightLeftOn(object):
+    def __init__(self, light):
+        self.light = light
+
+    def get_text(self):
+        return f'The {self.light.name} lights were left on'

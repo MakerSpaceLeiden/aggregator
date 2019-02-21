@@ -2,8 +2,9 @@ import random
 from functools import partial
 from collections import defaultdict
 from .model import ALL_LIGHTS, history_line_to_json, get_history_line_description, UserEntered, UserLeft
-from .messages import StaleCheckoutNotification, MachineLeftOnNotification, MessageHelp, TestNotification, BASIC_COMMANDS, \
-    ProblemMachineLeftOnByUser, ProblemMachineLeftOnBySomeoneElse, ProblemsLeavingSpaceNotification, ProblemSpaceLeftOpen
+from .messages import MessageHelp, BASIC_COMMANDS, \
+    StaleCheckoutNotification, MachineLeftOnNotification, ProblemsLeavingSpaceNotification, TestNotification, \
+    ProblemMachineLeftOnByUser, ProblemMachineLeftOnBySomeoneElse, ProblemSpaceLeftOpen, ProblemLightLeftOn
 from .bots.bot_logic import BotLogic
 from .urls import Urls
 
@@ -116,10 +117,18 @@ class Aggregator(object):
             elif is_last_user_leaving:
                 problems.append(ProblemMachineLeftOnBySomeoneElse(machine_state['machine']['name']))
 
-        # Check big switch
-        space_open = self.redis_adapter.get_space_open(logger)
-        if is_last_user_leaving and space_open:
-            problems.append(ProblemSpaceLeftOpen())
+        # When space remains empty
+        if is_last_user_leaving:
+            # Check big switch
+            space_open = self.redis_adapter.get_space_open(logger)
+            if is_last_user_leaving and space_open:
+                problems.append(ProblemSpaceLeftOpen())
+
+            # Check lights
+            lights_on = self.redis_adapter.get_lights_on(logger)
+            for light in ALL_LIGHTS:
+                if light.label in lights_on:
+                    problems.append(ProblemLightLeftOn(light))
 
         if len(problems) > 0:
             self._send_user_notification(user, ProblemsLeavingSpaceNotification(user, self.clock.now(), problems, is_last_user_leaving), logger)
