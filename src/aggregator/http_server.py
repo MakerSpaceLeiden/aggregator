@@ -1,15 +1,6 @@
-import asyncio
 import json
 import logging
 from functools import wraps, partial
-import aiocron
-
-
-def start_checking_for_stale_checkins(aggregator, worker_input_queue, crontab, logger):
-    @aiocron.crontab(crontab)
-    @asyncio.coroutine
-    def early_in_the_morning():
-        worker_input_queue.add_task(aggregator.clean_stale_user_checkins, logger)
 
 
 def run_http_server(loop, input_message_queue, aggregator, worker_input_queue, logger, logging_handler, basic_auth, host, port):

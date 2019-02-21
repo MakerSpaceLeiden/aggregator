@@ -30,11 +30,17 @@ class Time(object):
     def __lt__(self, other):
         return self.ts < other.ts
 
+    def __hash__(self):
+        return hash(self.ts)
+
     def as_int_timestamp(self):
         return int(self.ts)
 
     def sorting_key(self):
         return self.ts
+
+    def replace(self, hour=None, minute=None):
+        return Time(datetime.datetime.fromtimestamp(self.ts).replace(hour=hour, minute=minute, second=0).timestamp())
 
     @classmethod
     def from_timestamp(cls, ts):

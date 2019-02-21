@@ -28,7 +28,8 @@ def _main(config):
     import sys
     import os
     import asyncio
-    from aggregator.http_server import run_http_server, start_checking_for_stale_checkins
+    from aggregator.http_server import run_http_server
+    from aggregator.timed_tasks import start_checking_for_stale_checkins, TaskScheduler
     from aggregator.mqtt.mqtt_client import MqttListenerClient
     from aggregator.database import MySQLAdapter
     from aggregator.redis import RedisAdapter
@@ -75,6 +76,9 @@ def _main(config):
     # Email
     email_adapter = EmailAdapter(**config['email'])
 
+    # Task scheduler
+    task_scheduler = TaskScheduler(clock, logger)
+
     # Application logic
     aggregator = Aggregator(
         MySQLAdapter(**config['mysql']),
@@ -82,6 +86,7 @@ def _main(config):
         http_server_input_message_queue,
         clock,
         email_adapter,
+        task_scheduler,
         config['check_stale_checkins']['stale_after_hours'] if 'check_stale_checkins' in config else 0,
     )
 
@@ -116,6 +121,7 @@ def _main(config):
     # Start cronjobs
     if 'check_stale_checkins' in config:
         start_checking_for_stale_checkins(aggregator, worker_input_queue, config['check_stale_checkins']['crontab'], logger)
+    task_scheduler.start_running_scheduled_tasks(worker_input_queue)
 
     # Start HTTP server (blocks until Ctrl-C)
     run_http_server(

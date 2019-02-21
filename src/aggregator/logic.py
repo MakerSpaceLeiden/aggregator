@@ -1,4 +1,5 @@
 import random
+from functools import partial
 from collections import defaultdict
 from .model import ALL_LIGHTS, history_line_to_json, get_history_line_description, UserEntered, UserLeft
 from .messages import StaleCheckoutNotification, MachineLeftOnNotification, MessageHelp, TestNotification, BASIC_COMMANDS
@@ -7,7 +8,7 @@ from .urls import Urls
 
 
 class Aggregator(object):
-    def __init__(self, mysql_adapter, redis_adapter, notifications_queue, clock, email_adapter, checkin_stale_after_hours):
+    def __init__(self, mysql_adapter, redis_adapter, notifications_queue, clock, email_adapter, task_scheduler, checkin_stale_after_hours):
         self.mysql_adapter = mysql_adapter
         self.redis_adapter = redis_adapter
         self.notifications_queue = notifications_queue
@@ -17,6 +18,7 @@ class Aggregator(object):
         self.telegram_bot = None
         self.signal_bot = None
         self.email_adapter = email_adapter
+        self.task_scheduler = task_scheduler
         self.urls = Urls()
 
     def _get_user_by_id(self, user_id, logger):
@@ -184,7 +186,8 @@ class Aggregator(object):
         user = self._get_user_by_id(user_id, logger)
         logger.info(f'Checking out stale user {user.full_name if user else user_id} after {int(elapsed_time_in_hours)} hours')
         self.redis_adapter.remove_user_from_space(user_id, logger)
-        self._send_user_notification(user, StaleCheckoutNotification(user, ts_checkin, self.urls.notification_settings()), logger)
+        notification = StaleCheckoutNotification(user, ts_checkin, self.urls.notification_settings())
+        self.task_scheduler.schedule_task_at_time(self.clock.now().replace(hour=8, minute=0), partial(self._send_user_notification, user, notification), logger)
 
     def _send_user_notification(self, user, notification, logger):
         if self.telegram_bot and user.uses_telegram_bot():
