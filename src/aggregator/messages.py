@@ -34,7 +34,7 @@ class BaseBotMessage(object):
         return self.get_text()
 
     def get_subject_for_email(self):
-        return f'Notification <{self.__class__.__name__}>'
+        return ''
 
 
 class MessageNotRegistered(BaseBotMessage):
@@ -142,12 +142,19 @@ class StaleCheckoutNotification(BaseBotMessage):
             "PS. If you would rather receive these communications via the Chat BOT instead of email, you can configure your notification settings at the URL above."
         )
 
+    def get_subject_for_email(self):
+        return 'Forgot to checkout'
+
+
 class MachineLeftOnNotification(BaseBotMessage):
     def __init__(self, machine):
         self.machine = machine
 
     def get_text(self):
         return f"You forgot to press the red button on the {self.machine.name}! But don't worry: it turned off automatically. Just don't forget next time. ;-)"
+
+    def get_subject_for_email(self):
+        return f'{self.machine.name} left on'
 
 
 class TestNotification(BaseBotMessage):
@@ -168,3 +175,63 @@ class TestNotification(BaseBotMessage):
 
     def get_subject_for_email(self):
         return 'Test notification'
+
+
+class ProblemsLeavingSpaceNotification(BaseBotMessage):
+    def __init__(self, user, ts_checkout, problems, is_last_user_leaving):
+        self.user = user
+        self.ts_checkout = ts_checkout
+        self.problems = problems
+        self.is_last_user_leaving = is_last_user_leaving
+
+    def get_text(self):
+        lines = [
+            f"{self.user.first_name}, "
+        ]
+        if self.is_last_user_leaving:
+            lines.append(f'{self.user.first_name}, it appears you were the last leaving the space at {self.ts_checkout.human_str()}.')
+        else:
+            lines.append(f'{self.user.first_name}, it appears you left the space at {self.ts_checkout.human_str()}.')
+        lines.append('I noticed the following issues:')
+        for problem in self.problems:
+            lines.append(' - ' + problem.get_text())
+        lines.append('Please remember to take care of this sort of things when you leave the space!')
+        return '\n'.join(lines)
+
+    def get_email_text(self):
+        lines = [
+            f"Hello {self.user.first_name},\n"
+        ]
+        if self.is_last_user_leaving:
+            lines.append(f'It appears you were the last leaving the space at {self.ts_checkout.human_str()}.')
+        else:
+            lines.append(f'It appears you left the space at {self.ts_checkout.human_str()}.')
+        lines.append('\nI noticed the following issues:')
+        for problem in self.problems:
+            lines.append(' - ' + problem.get_text())
+        lines.append('\nPlease remember to take care of this sort of things when you leave the space!')
+        lines.append('\nYours truly,')
+        lines.append("The MakerSpace BOT")
+        return '\n'.join(lines)
+
+    def get_subject_for_email(self):
+        return 'Forgotten when leaving the space'
+
+
+# -- Problems (used to compose notifications) ----
+
+
+class ProblemMachineLeftOnByUser(object):
+    def __init__(self, machine_name):
+        self.machine_name = machine_name
+
+    def get_text(self):
+        return f'You left the {self.machine_name} turned on (press the RED button!)'
+
+
+class ProblemMachineLeftOnBySomeoneElse(object):
+    def __init__(self, machine_name):
+        self.machine_name = machine_name
+
+    def get_text(self):
+        return f'Someone left the {self.machine_name} turned on (please, press the RED button)'

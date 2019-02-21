@@ -2,7 +2,8 @@ import random
 from functools import partial
 from collections import defaultdict
 from .model import ALL_LIGHTS, history_line_to_json, get_history_line_description, UserEntered, UserLeft
-from .messages import StaleCheckoutNotification, MachineLeftOnNotification, MessageHelp, TestNotification, BASIC_COMMANDS
+from .messages import StaleCheckoutNotification, MachineLeftOnNotification, MessageHelp, TestNotification, BASIC_COMMANDS, \
+    ProblemMachineLeftOnByUser, ProblemMachineLeftOnBySomeoneElse, ProblemsLeavingSpaceNotification
 from .bots.bot_logic import BotLogic
 from .urls import Urls
 
@@ -100,6 +101,20 @@ class Aggregator(object):
         logger.info(f'user_left_space: {user.full_name}')
         self.redis_adapter.user_left_space(user, logger)
         self.redis_adapter.store_history_line(UserLeft(user_id, self.clock.now(), user.first_name, user.last_name), logger)
+        users_still_in_space = self.redis_adapter.get_user_ids_in_space_with_timestamps(logger)
+        is_last_user_leaving = len(users_still_in_space) == 0
+        self._user_leave_checks(user, is_last_user_leaving, logger)
+
+    def _user_leave_checks(self, user, is_last_user_leaving, logger):
+        problems = []
+        all_machines_states = self._get_machines_on_for_json(logger)
+        for machine_state in all_machines_states:
+            if machine_state['user'] and machine_state['user']['user_id'] == user.user_id:
+                problems.append(ProblemMachineLeftOnByUser(machine_state['machine']['name']))
+            elif is_last_user_leaving:
+                problems.append(ProblemMachineLeftOnBySomeoneElse(machine_state['machine']['name']))
+        if len(problems) > 0:
+            self._send_user_notification(user, ProblemsLeavingSpaceNotification(user, self.clock.now(), problems, is_last_user_leaving), logger)
 
     def is_user_id_in_space(self, user_id, logger):
         for user_id_in_space, ts_checkin in self.redis_adapter.get_user_ids_in_space_with_timestamps(logger):
@@ -113,8 +128,7 @@ class Aggregator(object):
         users = [(self._get_user_by_id(user_id, logger), ts_checkin) for user_id, ts_checkin in data]
         users.sort(key=lambda checkin: -checkin[1].sorting_key())
         all_machines = self._get_all_machines(logger)
-        all_machines_states = [self._get_machine_onoff_state(machine, logger) for machine in self.redis_adapter.get_machines_on(logger)]
-        all_machines_states = [ms for ms in all_machines_states if ms]
+        all_machines_states = self._get_machines_on_for_json(logger)
         machines_on_by_user = defaultdict(list)
         for state in all_machines_states:
             if state.get('user', None) and state['user'].get('user_id', None):
@@ -135,6 +149,11 @@ class Aggregator(object):
                 'machines_on': machines_on_by_user.get(user.user_id, []),
             } for user, ts_checkin in users if user],
         }
+
+    def _get_machines_on_for_json(self, logger):
+        all_machines_states = [self._get_machine_onoff_state(machine, logger) for machine in self.redis_adapter.get_machines_on(logger)]
+        all_machines_states = [ms for ms in all_machines_states if ms]
+        return all_machines_states
 
     def _get_history_line_for_json(self, hl):
         data = history_line_to_json(hl)

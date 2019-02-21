@@ -63,6 +63,10 @@ class TestApplicationLogic(unittest.TestCase):
         self._delete_all_redis_keys()
 
     def send_notification(self, user, notification, logger):
+        self.assertNotEqual(notification.get_text(), '')
+        self.assertNotEqual(notification.get_markdown(), '')
+        self.assertNotEqual(notification.get_email_text(), '')
+        self.assertNotEqual(notification.get_subject_for_email(), '')
         self.bot_messages.append( (user.user_id, notification.__class__.__name__) )
 
     def send_email(self, user, message, logger):
@@ -174,6 +178,14 @@ class TestApplicationLogic(unittest.TestCase):
         # No more messages after that
         self.task_scheduler.actually_execute_due_tasks(self.logger)
         self.assertEqual(self.bot_messages, [])
+
+    def test_warn_user_when_machine_is_on(self):
+        self.aggregator.user_entered_space(STEFANO.user_id, self.logger)
+        self.aggregator.user_activated_machine(STEFANO.user_id, 'tablesaw', self.logger)
+        self.aggregator.machine_power('tablesaw', 'on', self.logger)
+        self.assertEqual(self.bot_messages, [])
+        self.aggregator.user_left_space(STEFANO.user_id, self.logger)
+        self.assertEqual(self.bot_messages, [(1, 'ProblemsLeavingSpaceNotification')])
 
     def test_machine_on_and_off(self):
         self.aggregator.user_entered_space(STEFANO.user_id, self.logger)
