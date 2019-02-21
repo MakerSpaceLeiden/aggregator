@@ -55,8 +55,9 @@ class MessageWho(BaseBotMessage):
             f'''{self.user.first_name}, the space is marked as {'OPEN' if self.space_status["space_open"] or True else "closed"}.'''
         ]
         if not self.space_status['users_in_space']:
-            lines.append('Not seen anyone recently.')
+            lines.append('Not seen anyone today.')
         else:
+            lines.append('Latest checkins today:')
             for user_data in self.space_status['users_in_space']:
                 lines.append(' - {0} ({1} - {2})'.format(user_data['user']['full_name'], user_data['ts_checkin_human'], user_data['ts_checkin']))
         return '\n'.join(lines)
