@@ -235,3 +235,8 @@ class ProblemMachineLeftOnBySomeoneElse(object):
 
     def get_text(self):
         return f'Someone left the {self.machine_name} turned on (please, press the RED button)'
+
+
+class ProblemSpaceLeftOpen(object):
+    def get_text(self):
+        return f'The big switch (left of the door) was left on the OPEN position'

@@ -19,8 +19,20 @@ STEFANO = User(
     always_uses_email = True,
 )
 
+BOB = User(
+    user_id = 2,
+    first_name = 'Bob',
+    last_name = 'de Bouwer',
+    email = 'bob@bouwer.com',
+    telegram_user_id = '2345',
+    phone_number = '+316456789',
+    uses_signal = True,
+    always_uses_email = True,
+)
+
 ALL_USERS = [
     STEFANO,
+    BOB,
 ]
 
 TABLE_SAW = Machine(1, 'Tablesaw', 'Table saw', 'tablesaw', 'tablesaw', 'Wood workshop')
@@ -58,6 +70,7 @@ class TestApplicationLogic(unittest.TestCase):
         self.aggregator.signal_bot = self
         self.bot_messages = []
         self.emails_sent = []
+        self.bot_notification_objects = []
 
     def tearDown(self):
         self._delete_all_redis_keys()
@@ -68,6 +81,7 @@ class TestApplicationLogic(unittest.TestCase):
         self.assertNotEqual(notification.get_email_text(), '')
         self.assertNotEqual(notification.get_subject_for_email(), '')
         self.bot_messages.append( (user.user_id, notification.__class__.__name__) )
+        self.bot_notification_objects.append(notification)
 
     def send_email(self, user, message, logger):
         self.emails_sent.append((user.user_id, message.__class__.__name__))
@@ -179,13 +193,31 @@ class TestApplicationLogic(unittest.TestCase):
         self.task_scheduler.actually_execute_due_tasks(self.logger)
         self.assertEqual(self.bot_messages, [])
 
-    def test_warn_user_when_machine_is_on(self):
+    def test_warn_user_when_he_leaves_and_his_machine_is_on(self):
         self.aggregator.user_entered_space(STEFANO.user_id, self.logger)
+
         self.aggregator.user_activated_machine(STEFANO.user_id, 'tablesaw', self.logger)
         self.aggregator.machine_power('tablesaw', 'on', self.logger)
-        self.assertEqual(self.bot_messages, [])
+
         self.aggregator.user_left_space(STEFANO.user_id, self.logger)
+
         self.assertEqual(self.bot_messages, [(1, 'ProblemsLeavingSpaceNotification')])
+        problems = [p.__class__.__name__ for p in self.bot_notification_objects[0].problems]
+        self.assertEqual(problems, ['ProblemMachineLeftOnByUser'])
+
+    def test_warn_user_when_he_leaves_and_another_machine_is_on(self):
+        self.aggregator.user_entered_space(STEFANO.user_id, self.logger)
+
+        self.aggregator.user_activated_machine(BOB.user_id, 'tablesaw', self.logger)
+        self.aggregator.machine_power('tablesaw', 'on', self.logger)
+
+        # BOB left without checking out
+
+        self.aggregator.user_left_space(STEFANO.user_id, self.logger)
+
+        self.assertEqual(self.bot_messages, [(1, 'ProblemsLeavingSpaceNotification')])
+        problems = [p.__class__.__name__ for p in self.bot_notification_objects[0].problems]
+        self.assertEqual(problems, ['ProblemMachineLeftOnBySomeoneElse'])
 
     def test_machine_on_and_off(self):
         self.aggregator.user_entered_space(STEFANO.user_id, self.logger)
