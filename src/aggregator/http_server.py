@@ -100,6 +100,14 @@ def run_http_server(loop, input_message_queue, aggregator, worker_input_queue, l
         await worker_input_queue.add_task_with_result_future(partial(aggregator.send_notification_test, request_payload['user_id']), request.logger)
         return Response('Ok', mimetype='text/plain')
 
+    @app.route('/space/checkout', methods=['POST'])
+    @with_basic_auth
+    async def space_checkout():
+        request_body = await request.get_data()
+        request_payload = json.loads(request_body)
+        await worker_input_queue.add_task_with_result_future(partial(aggregator.user_left_space, request_payload['user_id']), request.logger)
+        return Response('Ok', mimetype='text/plain')
+
     # -- Web Socket -----
 
     # async def ws_sending():
