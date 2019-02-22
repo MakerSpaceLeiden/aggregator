@@ -187,9 +187,7 @@ class ProblemsLeavingSpaceNotification(BaseBotMessage):
         self.is_last_user_leaving = is_last_user_leaving
 
     def get_text(self):
-        lines = [
-            f"{self.user.first_name}, "
-        ]
+        lines = []
         if self.is_last_user_leaving:
             lines.append(f'{self.user.first_name}, it appears you were the last leaving the space at {self.ts_checkout.human_str()}.')
         else:
