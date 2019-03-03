@@ -5,6 +5,8 @@ from .mqtt_parser import parse_message
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 SAMPLE_MESSAGES_FILE_PATH = os.path.join(DIR_PATH, 'sample_mqtt_messages.txt')
 
+MISCELLANEOUS_ERRORS_IN_LOGS_3_MAR_2019_FILE_PATH = os.path.join(DIR_PATH, 'errors_3_mar_2019.txt')
+
 
 class TestMqttParsing(unittest.TestCase):
     def test_groteschakelaar(self):
@@ -73,3 +75,10 @@ class TestMqttParsing(unittest.TestCase):
             if parsed_message[0] == 'machine_state' and parsed_message[-1] != 'ready':
                 print(parsed_message)
 
+    def test_miscellaneous_errors_in_logs_3_mar_2019(self):
+        for line in open(MISCELLANEOUS_ERRORS_IN_LOGS_3_MAR_2019_FILE_PATH).readlines():
+            topic, message = line.strip()[line.strip().index('Cannot parse message:')+22:].split(' - ', 1)
+            parsed_message = parse_message(topic, message)
+            self.assertIsNotNone(parsed_message, f'Unable to parse message: ({repr(topic)}, {repr(message)})')
+            # if parsed_message[0] == 'machine_state' and parsed_message[-1] != 'ready':
+            #     print(parsed_message)
