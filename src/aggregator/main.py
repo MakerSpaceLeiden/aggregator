@@ -88,6 +88,7 @@ def _main(config):
         email_adapter,
         task_scheduler,
         config['check_stale_checkins']['stale_after_hours'] if 'check_stale_checkins' in config else 0,
+        config['chores']['timeframe_in_days'],
     )
 
     # Start MQTT listener

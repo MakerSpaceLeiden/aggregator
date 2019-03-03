@@ -46,6 +46,10 @@ class Time(object):
     def from_timestamp(cls, ts):
         return cls(ts)
 
+    @classmethod
+    def from_datetime(cls, dt):
+        return cls(dt.timestamp())
+
     def human_str(self):
         return datetime.datetime.fromtimestamp(self.ts).strftime(HUMAN_DATETIME_STRING)
 
@@ -55,6 +59,12 @@ class Time(object):
 
     def delta_in_hours(self, ts_from):
         return (self.ts - ts_from.ts) / 3600
+
+    def add(self, how_much, what):
+        if what in ('hour', 'hours'):
+            return Time(self.ts + how_much * 3600)
+        if what in ('day', 'days'):
+            return Time(self.ts + how_much * 3600 * 24)
 
 
 class MockClock(object):

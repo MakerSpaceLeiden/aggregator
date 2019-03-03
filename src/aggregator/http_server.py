@@ -108,6 +108,13 @@ def run_http_server(loop, input_message_queue, aggregator, worker_input_queue, l
         await worker_input_queue.add_task_with_result_future(partial(aggregator.user_left_space, request_payload['user_id']), request.logger)
         return Response('Ok', mimetype='text/plain')
 
+    @app.route('/chores/overview', methods=['POST'])
+    @with_basic_auth
+    async def chores_overview():
+        data = await worker_input_queue.add_task_with_result_future(aggregator.get_chores_for_json, request.logger)
+        return jsonify(data)
+
+
     # -- Web Socket -----
 
     # async def ws_sending():

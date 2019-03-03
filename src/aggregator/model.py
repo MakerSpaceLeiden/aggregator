@@ -46,6 +46,11 @@ ALL_LIGHTS = [
 ]
 
 
+class Chore(namedtuple('Chore', 'chore_id name description class_type configuration')):
+    def for_json(self):
+        return dict(self._asdict())
+
+
 # -- History lines ----
 
 

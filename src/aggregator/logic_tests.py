@@ -4,7 +4,7 @@ from .logic import Aggregator
 from .redis import RedisAdapter
 from .clock import MockClock
 from .logging import configure_logging_for_tests
-from .model import User, Machine
+from .model import User, Machine, Chore
 from .timed_tasks import TaskScheduler
 
 
@@ -42,6 +42,13 @@ ALL_MACHINES = [
 ]
 
 
+EMPTY_TRASH = Chore(1, 'Empty trash', 'Empty trash every 2 weeks', 'EmptyTrash', {'min_required_people': 2, 'first_tuesday': '26/2/2019 7:30'})
+
+ALL_CHORES = [
+    EMPTY_TRASH,
+]
+
+
 class MockeHttpServerInputMessageQueue(object):
     def send_message(self, **kwargs):
         pass
@@ -51,20 +58,20 @@ class TestApplicationLogic(unittest.TestCase):
     def setUp(self):
         self.maxDiff = None  # To see large JSON diffs
         self.logger = configure_logging_for_tests()
-        self.database_adapter = MockDatabaseAdapter
         self.clock = MockClock()
         http_server_input_message_queue = MockeHttpServerInputMessageQueue()
         self.redis_adapter = RedisAdapter(self.clock, '127.0.0.1', 6379, 0, 'msl_aggregator_tests', 60, 90, 60, 60, 7)
         self._delete_all_redis_keys()
         self.task_scheduler = TaskScheduler(self.clock, self.logger)
         self.aggregator = Aggregator(
-            MockDatabaseAdapter(ALL_USERS, ALL_MACHINES),
+            MockDatabaseAdapter(ALL_USERS, ALL_MACHINES, ALL_CHORES),
             self.redis_adapter,
             http_server_input_message_queue,
             self.clock,
             self,
             self.task_scheduler,
             5,
+            90,
         )
         # self.aggregator.bot_logic.send_message.plug(self._send_bot_message)
         self.aggregator.signal_bot = self
@@ -130,6 +137,42 @@ class TestApplicationLogic(unittest.TestCase):
             'ts': 1549184099,
             'user_id': 1
         }])
+
+    def test_chores(self):
+        chores_state = self.aggregator.get_chores_for_json(self.logger)
+        self.assertEqual(chores_state, {
+            'events': [{'chore': {'chore_id': 1,
+                                  'description': 'Empty trash every 2 weeks',
+                                  'min_required_people': 2,
+                                  'name': 'Empty trash'},
+                        'when': {'human_str': '07:30:00 26/02/2019',
+                                 'timestamp': 1551162600}},
+                       {'chore': {'chore_id': 1,
+                                  'description': 'Empty trash every 2 weeks',
+                                  'min_required_people': 2,
+                                  'name': 'Empty trash'},
+                        'when': {'human_str': '07:30:00 12/03/2019',
+                                 'timestamp': 1552372200}},
+                       {'chore': {'chore_id': 1,
+                                  'description': 'Empty trash every 2 weeks',
+                                  'min_required_people': 2,
+                                  'name': 'Empty trash'},
+                        'when': {'human_str': '07:30:00 26/03/2019',
+                                 'timestamp': 1553581800}},
+                       {'chore': {'chore_id': 1,
+                                  'description': 'Empty trash every 2 weeks',
+                                  'min_required_people': 2,
+                                  'name': 'Empty trash'},
+                        'when': {'human_str': '08:30:00 09/04/2019',
+                                 'timestamp': 1554791400}},
+                       {'chore': {'chore_id': 1,
+                                  'description': 'Empty trash every 2 weeks',
+                                  'min_required_people': 2,
+                                  'name': 'Empty trash'},
+                        'when': {'human_str': '08:30:00 23/04/2019',
+                                 'timestamp': 1556001000}}]
+
+        })
 
     def test_stale_checkout_detection(self):
         # Check in at 11pm

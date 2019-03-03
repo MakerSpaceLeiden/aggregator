@@ -7,15 +7,17 @@ from .messages import MessageHelp, BASIC_COMMANDS, \
     ProblemMachineLeftOnByUser, ProblemMachineLeftOnBySomeoneElse, ProblemSpaceLeftOpen, ProblemLightLeftOn
 from .bots.bot_logic import BotLogic
 from .urls import Urls
+from .chores.chores_logic import ChoresLogic
 
 
 class Aggregator(object):
-    def __init__(self, mysql_adapter, redis_adapter, notifications_queue, clock, email_adapter, task_scheduler, checkin_stale_after_hours):
+    def __init__(self, mysql_adapter, redis_adapter, notifications_queue, clock, email_adapter, task_scheduler, checkin_stale_after_hours, chores_timeframe_in_days):
         self.mysql_adapter = mysql_adapter
         self.redis_adapter = redis_adapter
         self.notifications_queue = notifications_queue
         self.clock = clock
         self.checkin_stale_after_hours = checkin_stale_after_hours
+        self.chores_timeframe_in_days = chores_timeframe_in_days
         self.bot_logic = BotLogic(self)
         self.telegram_bot = None
         self.signal_bot = None
@@ -327,3 +329,11 @@ class Aggregator(object):
         if user:
             machine = self._get_machine_by_name(machine_name, logger)
             self._send_user_notification(user, MachineLeftOnNotification(machine), logger)
+
+    def get_chores_for_json(self, logger):
+        chores_logic = ChoresLogic(self.mysql_adapter.get_all_chores(logger))
+        now = self.clock.now()
+        events = chores_logic.get_events_from_to(now, now.add(self.chores_timeframe_in_days, 'days'))
+        return {
+            'events': [event.for_json() for event in events],
+        }

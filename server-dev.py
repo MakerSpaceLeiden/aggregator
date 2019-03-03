@@ -56,6 +56,10 @@ CONFIG = {
 
     # 'signal_bot': {
     # },
+
+    'chores': {
+        'timeframe_in_days': 90,
+    }
 }
 
 
