@@ -25,7 +25,7 @@ class User(namedtuple('User', 'user_id first_name last_name email telegram_user_
         return self.uses_signal and self.phone_number
 
     def uses_email(self):
-        return (not self.uses_telegram_bot and not self.uses_signal_bot()) or self.always_uses_email
+        return (not self.uses_telegram_bot() and not self.uses_signal_bot()) or self.always_uses_email
 
 
 Tag = namedtuple('Tag', 'tag_id tag user')
