@@ -4,7 +4,7 @@ from .mqtt_parser import parse_message
 
 
 MESSAGE_TYPES_TO_DEDUPLICATE = (
-    'space_open',
+    # 'space_open',
 )
 
 
@@ -43,9 +43,11 @@ class MqttListenerClient(object):
                 logger.error(f'Received message, but cannot decode UTF-8: {repr(msg.payload)}')
                 return
             if self.log_all_messages:
-                logger.info(f'{msg.topic} - {msg_str}')
+                logger.info(f'RAW: {repr((msg.topic, msg_str))}')
             parsed_result = parse_message(msg.topic, msg_str)
             if parsed_result:
+                if self.log_all_messages:
+                    logger.info(f'PARSED: {repr(parsed_result)}')
                 msg_type = parsed_result[0]
                 if msg_type and msg_type != 'ignore':
                     self._process_parsed_message(parsed_result, logger)
@@ -64,7 +66,6 @@ class MqttListenerClient(object):
             else:
                 self.msg_deduplication[msg_type] = parsed_result
 
-        logger.info(f'Received message: {repr(parsed_result)}')
         method = getattr(self.aggregator, msg_type, None)
         if method:
             aggregator_function = functools.partial(method, *args)
