@@ -59,6 +59,8 @@ CONFIG = {
 
     'chores': {
         'timeframe_in_days': 90,
+        'warnings_check_window_in_hours': 2,  # Window to check for warnings to be sent (i.e. if server is down for longer, warnings might be lost)
+        'message_users_seen_no_later_than_days': 14,
     }
 }
 

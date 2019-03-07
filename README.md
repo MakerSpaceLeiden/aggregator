@@ -11,6 +11,10 @@ https://balsamiq.cloud/s84bb/pl6cb2r
 ![Aggregator Architecture](Aggregator%20Architecture.png)
 
 
+## Features
+
+- [Chores](./src/aggregator/chores/README.md)
+
 ## Installation and maintenance
 
 ### Requirements

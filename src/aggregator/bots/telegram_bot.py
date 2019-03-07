@@ -11,10 +11,13 @@ class TelegramBot(object):
         self.updater = Updater(api_token)
         self.aggregator.telegram_bot = self
 
+    # Called from the working thread
     def send_notification(self, user, notification, logger):
         logger = logger.getLogger(subsystem='telegram_bot')
         logger.info(f'Sending notification of type {notification.__class__.__name__} to user {user.user_id} {user.full_name}')
         self._send_message(notification, user.telegram_user_id)
+        chat_id = f'telegram-{user.telegram_user_id}'
+        return chat_id
 
     def start_bot(self):
         self.logger.info('Starting Telegram BOT')

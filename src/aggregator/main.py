@@ -82,13 +82,15 @@ def _main(config):
     # Application logic
     aggregator = Aggregator(
         MySQLAdapter(**config['mysql']),
-        RedisAdapter(clock, **config['redis']),
+        RedisAdapter(clock, config['chores']['warnings_check_window_in_hours'], **config['redis']),
         http_server_input_message_queue,
         clock,
         email_adapter,
         task_scheduler,
         config['check_stale_checkins']['stale_after_hours'] if 'check_stale_checkins' in config else 0,
         config['chores']['timeframe_in_days'],
+        config['chores']['warnings_check_window_in_hours'],
+        config['chores']['message_users_seen_no_later_than_days'],
     )
 
     # Start MQTT listener

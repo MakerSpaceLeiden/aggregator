@@ -82,18 +82,8 @@ class MySQLAdapter(object):
             ''', (user_id,))
             db.commit()
 
+    def get_chore_volunteers_for_event(self, event, logger):
+        raise NotImplementedError('Not implemented yet!')
 
-class MockDatabaseAdapter(object):
-    def __init__(self, all_users, all_machines, all_chores):
-        self.all_users = all_users
-        self.all_machines = all_machines
-        self.all_chores = all_chores
-
-    def get_all_users(self, logger):
-        return self.all_users
-
-    def get_all_machines(self, logger):
-        return self.all_machines
-
-    def get_all_chores(self, logger):
-        return self.all_chores
+    def add_chore_volunteer_for_event(self, event, user, logger):
+        raise NotImplementedError('Not implemented yet!')

@@ -1,34 +1,40 @@
+# This is where the main business logic lives.
+
 import random
 from functools import partial
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from .model import ALL_LIGHTS, history_line_to_json, get_history_line_description, UserEntered, UserLeft
 from .messages import MessageHelp, BASIC_COMMANDS, \
     StaleCheckoutNotification, MachineLeftOnNotification, ProblemsLeavingSpaceNotification, TestNotification, \
     ProblemMachineLeftOnByUser, ProblemMachineLeftOnBySomeoneElse, ProblemSpaceLeftOpen, ProblemLightLeftOn
 from .bots.bot_logic import BotLogic
 from .urls import Urls
-from .chores.chores_logic import ChoresLogic
+from .chores.chores_logic import ChoresLogic, NudgesParams
 
 
 class Aggregator(object):
-    def __init__(self, mysql_adapter, redis_adapter, notifications_queue, clock, email_adapter, task_scheduler, checkin_stale_after_hours, chores_timeframe_in_days):
-        self.mysql_adapter = mysql_adapter
+    def __init__(self,
+                 database_adapter, redis_adapter, notifications_queue, clock, email_adapter, task_scheduler, checkin_stale_after_hours,
+                 chores_timeframe_in_days, chores_warnings_check_window_in_hours, chores_message_users_seen_no_later_than_days):
+        self.database_adapter = database_adapter
         self.redis_adapter = redis_adapter
         self.notifications_queue = notifications_queue
         self.clock = clock
         self.checkin_stale_after_hours = checkin_stale_after_hours
         self.chores_timeframe_in_days = chores_timeframe_in_days
+        self.chores_warnings_check_window_in_hours = chores_warnings_check_window_in_hours
+        self.chores_message_users_seen_no_later_than_days = chores_message_users_seen_no_later_than_days
+        self.email_adapter = email_adapter
+        self.task_scheduler = task_scheduler
         self.bot_logic = BotLogic(self)
         self.telegram_bot = None
         self.signal_bot = None
-        self.email_adapter = email_adapter
-        self.task_scheduler = task_scheduler
         self.urls = Urls()
 
     def _get_user_by_id(self, user_id, logger):
         user = self.redis_adapter.get_user_by_id(user_id, logger)
         if not user:
-            all_users = self.mysql_adapter.get_all_users(logger)
+            all_users = self.database_adapter.get_all_users(logger)
             self.redis_adapter.set_users_by_ids(all_users, logger)
             filtered_users = [u for u in all_users if u.user_id == user_id]
             if len(filtered_users) == 1:
@@ -38,7 +44,7 @@ class Aggregator(object):
     def _get_machine_by_name(self, machine_name, logger):
         machine = self.redis_adapter.get_machine_by_name(machine_name, logger)
         if not machine:
-            all_machines = self.mysql_adapter.get_all_machines(logger)
+            all_machines = self.database_adapter.get_all_machines(logger)
             self.redis_adapter.set_all_machines(all_machines, logger)
             filtered_machines = [m for m in all_machines if m.node_machine_name == machine_name]
             if len(filtered_machines) == 1:
@@ -48,7 +54,7 @@ class Aggregator(object):
     def _get_all_machines(self, logger):
         machines = self.redis_adapter.get_all_machines(logger)
         if not machines:
-            machines = self.mysql_adapter.get_all_machines(logger)
+            machines = self.database_adapter.get_all_machines(logger)
             self.redis_adapter.set_all_machines(machines, logger)
         machines.sort(key=lambda m: (m.location_name or '', m.name or ''))
         return machines
@@ -65,7 +71,7 @@ class Aggregator(object):
     def get_user_by_telegram_id(self, telegram_id, logger):
         user = self.redis_adapter.get_user_by_telegram_id(telegram_id, logger)
         if not user:
-            all_users = self.mysql_adapter.get_all_users(logger)
+            all_users = self.database_adapter.get_all_users(logger)
             self.redis_adapter.set_users_by_ids(all_users, logger)
             filtered_users = [u for u in all_users if u.telegram_user_id == telegram_id]
             if len(filtered_users) == 1:
@@ -75,7 +81,7 @@ class Aggregator(object):
     def get_user_by_phone_number(self, phone_number, logger):
         user = self.redis_adapter.get_user_by_phone_number(phone_number, logger)
         if not user:
-            all_users = self.mysql_adapter.get_all_users(logger)
+            all_users = self.database_adapter.get_all_users(logger)
             self.redis_adapter.set_users_by_ids(all_users, logger)
             filtered_users = [u for u in all_users if u.phone_number == phone_number]
             if len(filtered_users) == 1:
@@ -83,7 +89,7 @@ class Aggregator(object):
         return user
 
     def get_tags(self, logger):
-        return self.mysql_adapter.get_all_tags(logger)
+        return self.database_adapter.get_all_tags(logger)
 
     def user_entered_space(self, user_id, logger):
         logger = logger.getLogger(subsystem='aggregator')
@@ -133,7 +139,7 @@ class Aggregator(object):
                     problems.append(ProblemLightLeftOn(light))
 
         if len(problems) > 0:
-            self._send_user_notification(user, ProblemsLeavingSpaceNotification(user, self.clock.now(), problems, is_last_user_leaving), logger)
+            self.send_user_notification(user, ProblemsLeavingSpaceNotification(user, self.clock.now(), problems, is_last_user_leaving), logger)
 
     def is_user_id_in_space(self, user_id, logger):
         for user_id_in_space, ts_checkin in self.redis_adapter.get_user_ids_in_space_with_timestamps(logger):
@@ -225,22 +231,28 @@ class Aggregator(object):
         logger.info(f'Checking out stale user {user.full_name if user else user_id} after {int(elapsed_time_in_hours)} hours')
         self.redis_adapter.remove_user_from_space(user_id, logger)
         notification = StaleCheckoutNotification(user, ts_checkin, self.urls.notification_settings(), self.urls.space_state())
-        self.task_scheduler.schedule_task_at_time(self.clock.now().replace(hour=8, minute=0), partial(self._send_user_notification, user, notification), logger)
+        self.task_scheduler.schedule_task_at_time(self.clock.now().replace(hour=8, minute=0), partial(self.send_user_notification, user, notification), logger)
 
-    def _send_user_notification(self, user, notification, logger):
+    def send_user_notification(self, user, notification, logger):
         if self.telegram_bot and user.uses_telegram_bot():
+            chat_id = None
             try:
-                self.telegram_bot.send_notification(user, notification, logger)
+                chat_id = self.telegram_bot.send_notification(user, notification, logger)
             except:
                 logger.exception('Unexpected exception when trying to notify user via Telegram')
+            if chat_id:
+                notification.set_chat_state(chat_id, self.bot_logic)
         if self.signal_bot and user.uses_signal_bot():
+            chat_id = None
             try:
-                self.signal_bot.send_notification(user, notification, logger)
+                chat_id = self.signal_bot.send_notification(user, notification, logger)
             except:
                 logger.exception('Unexpected exception when trying to notify user via Signal')
+            if chat_id:
+                notification.set_chat_state(chat_id, self.bot_logic)
         if user.uses_email():
             try:
-                self.email_adapter.send_email(user, notification, logger)
+                self.email_adapter.send_email_to_user(user, notification, logger)
             except:
                 logger.exception('Unexpected exception when trying to notify user via email')
 
@@ -290,12 +302,12 @@ class Aggregator(object):
         if user_id:
             user = self._get_user_by_id(user_id, logger)
             logger.info(f'Registering user {user_id} with Telegram User ID {telegram_user_id}')
-            self.mysql_adapter.store_telegram_user_id_for_user_id(telegram_user_id, user.user_id, logger)
+            self.database_adapter.store_telegram_user_id_for_user_id(telegram_user_id, user.user_id, logger)
             return user
 
     def delete_telegram_id_for_user(self, user_id, logger):
-        self.mysql_adapter.delete_telegram_user_id_for_user_id(user_id, logger)
-        all_users = self.mysql_adapter.get_all_users(logger)
+        self.database_adapter.delete_telegram_user_id_for_user_id(user_id, logger)
+        all_users = self.database_adapter.get_all_users(logger)
         self.redis_adapter.set_users_by_ids(all_users, logger)
 
     def handle_bot_message(self, chat_id, user, message, logger):
@@ -313,7 +325,7 @@ class Aggregator(object):
     def send_notification_test(self, user_id, logger):
         logger = logger.getLogger(subsystem='aggregator')
         user = self._get_user_by_id(user_id, logger)
-        self._send_user_notification(user, TestNotification(user), logger)
+        self.send_user_notification(user, TestNotification(user), logger)
 
     def machine_state(self, machine, state, logger):
         if state == 'ready':
@@ -328,12 +340,47 @@ class Aggregator(object):
         logger.info(f'Warning user {user.full_name if user else user_id} that machine {machine_name} was left on')
         if user:
             machine = self._get_machine_by_name(machine_name, logger)
-            self._send_user_notification(user, MachineLeftOnNotification(machine), logger)
+            self.send_user_notification(user, MachineLeftOnNotification(machine), logger)
+
+    def _get_chores_logic(self, logger):
+        return ChoresLogic(self.database_adapter.get_all_chores(logger))
 
     def get_chores_for_json(self, logger):
-        chores_logic = ChoresLogic(self.mysql_adapter.get_all_chores(logger))
+        chores_logic = self._get_chores_logic(logger)
         now = self.clock.now()
         events = chores_logic.get_events_from_to(now, now.add(self.chores_timeframe_in_days, 'days'))
         return {
             'events': [event.for_json() for event in events],
         }
+
+    def get_users_seen_no_later_than_days(self, num_days, logger):
+        ts_and_users = self.redis_adapter.get_users_last_in_space(logger)
+        threshold = self.clock.now().add(-num_days, 'days')
+        return [self._get_user_by_id(user_id, logger) for ts, user_id in ts_and_users if ts > threshold]
+
+    def send_warnings_for_chores(self, logger):
+        chores_logic = self._get_chores_logic(logger)
+        now = self.clock.now()
+        for event in chores_logic.iter_events_with_reminders_from_to(now.add(-self.chores_warnings_check_window_in_hours, 'hours'), now):
+            volunteers = self.database_adapter.get_chore_volunteers_for_event(event, logger)
+            params = NudgesParams(
+                volunteers,
+                now,
+                self.urls,
+                self.chores_message_users_seen_no_later_than_days,
+            )
+            for nudge in event.iter_nudges(params):
+                if not self.redis_adapter.nudge_has_been_processed(nudge, logger):
+                    nudge.send(self, logger)
+                    self.redis_adapter.store_nudge_marker(nudge, logger)
+
+    def user_volunteers_for_event(self, user_id, event, logger):
+        user = self._get_user_by_id(user_id, logger)
+        if not user:
+            raise Exception(f'User not found with ID {user_id}')
+        volunteers = self.database_adapter.get_chore_volunteers_for_event(event, logger)
+        if len(volunteers) >= event.chore.min_required_people:
+            # No need for more volunteers
+            return False
+        self.database_adapter.add_chore_volunteer_for_event(event, user, logger)
+        return True

@@ -7,9 +7,11 @@ from .model import history_line_to_json, json_to_history_line
 
 
 class RedisAdapter(object):
-    def __init__(self, clock, host, port, db, key_prefix, users_expiration_time_in_sec, pending_machine_activation_timeout_in_sec,
-                 telegram_token_expiration_in_sec, machine_state_timeout_in_minutes, history_lines_expiration_in_days):
+    def __init__(self, clock, chores_warnings_check_window_in_hours, host, port, db, key_prefix, users_expiration_time_in_sec,
+                 pending_machine_activation_timeout_in_sec, telegram_token_expiration_in_sec, machine_state_timeout_in_minutes,
+                 history_lines_expiration_in_days):
         self.clock = clock
+        self.chores_warnings_check_window_in_hours = chores_warnings_check_window_in_hours
         self.redis = redis.Redis(host=host, port=port, db=db)
         self.key_prefix = key_prefix
         self.users_expiration_time_in_sec = users_expiration_time_in_sec
@@ -73,6 +75,13 @@ class RedisAdapter(object):
         logger = logger.getLogger(subsystem='redis')
         logger.info(f'Storing user ID {user.user_id} in space')
         self.redis.hset(self._k_users_in_space(), user.user_id, ts.as_int_timestamp())
+        self.redis.hset(self._k_users_last_in_space(), user.user_id, ts.as_int_timestamp())
+
+    def get_users_last_in_space(self, logger):
+        logger = logger.getLogger(subsystem='redis')
+        logger.info(f'Getting all users last access to space')
+        values = self.redis.hgetall(self._k_users_last_in_space())
+        return [(Time.from_timestamp(int(value)), int(key)) for key, value in values.items()]
 
     def user_left_space(self, user, logger):
         logger = logger.getLogger(subsystem='redis')
@@ -210,6 +219,18 @@ class RedisAdapter(object):
             self.redis.srem(self._k_history_lines(), *ids_to_remove)
         return result
 
+    def nudge_has_been_processed(self, nudge, logger):
+        logger = logger.getLogger(subsystem='redis')
+        nudge_key = nudge.get_string_key()
+        logger.info(f'Checking nudge has been processed: {nudge_key}')
+        return self.redis.exists(self._k_nudge(nudge_key))
+
+    def store_nudge_marker(self, nudge, logger):
+        logger = logger.getLogger(subsystem='redis')
+        nudge_key = nudge.get_string_key()
+        logger.info(f'Checking nudge has been processed: {nudge_key}')
+        self.redis.setex(self._k_nudge(nudge_key), self.chores_warnings_check_window_in_hours * 2 * 3600, 'processed')
+
     # -- Keys ----
 
     def _k_history_line(self, hl_id):
@@ -236,6 +257,9 @@ class RedisAdapter(object):
     def _k_machine_state(self, machine):
         return f'{self.key_prefix}:mt{machine}'
 
+    def _k_nudge(self, nudge_key):
+        return f'{self.key_prefix}:nu{nudge_key}'
+
     def _k_space_open(self):
         return f'{self.key_prefix}:so'
 
@@ -244,6 +268,9 @@ class RedisAdapter(object):
 
     def _k_users_by_id(self):
         return f'{self.key_prefix}:ui'
+
+    def _k_users_last_in_space(self):
+        return f'{self.key_prefix}:ul'
 
     def _k_users_by_phone_number(self):
         return f'{self.key_prefix}:up'

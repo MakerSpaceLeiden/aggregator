@@ -7,12 +7,15 @@ class EmailAdapter(object):
     def __init__(self, from_address):
         self.from_address = from_address
 
-    def send_email(self, user, message, logger):
+    def send_email_to_user(self, user, message, logger):
+        self.send_email(f'{user.full_name} <{user.email}>', user.email, message, logger)
+
+    def send_email(self, name, email, message, logger):
         logger = logger.getLogger(subsystem = 'mail')
-        email_body = compose_email(self.from_address, f'{user.full_name} <{user.email}>', message.get_subject_for_email(), message.get_email_text())
-        logger.info(f'Sending email to {user.email}')
+        email_body = compose_email(self.from_address, f'{name}', message.get_subject_for_email(), message.get_email_text())
+        logger.info(f'Sending email to {name}: {message.__class__.__name__}')
         try:
-            ps = Popen(['/usr/sbin/sendmail', user.email], stdin=PIPE, stderr=PIPE)
+            ps = Popen(['/usr/sbin/sendmail', email], stdin=PIPE, stderr=PIPE)
             ps.stdin.write(email_body.encode('utf-8'))
             (stdout, stderr) = ps.communicate()
         except:

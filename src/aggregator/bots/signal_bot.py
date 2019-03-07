@@ -18,10 +18,13 @@ class SignalBot(object):
         self.bus = ravel.system_bus()
         self.bus.attach_asyncio(asyncio_loop)
 
+    # Called from the working thread
     def send_notification(self, user, notification, logger):
         logger = logger.getLogger(subsystem='signal_bot')
         logger.info(f'Sending notification of type {notification.__class__.__name__} to user {user.user_id} {user.full_name}')
         self._send_message(notification, user.phone_number)
+        chat_id = f'signal-{user.phone_number}'
+        return chat_id
 
     def start_bot(self):
         self.logger.info('Starting Signal BOT')
