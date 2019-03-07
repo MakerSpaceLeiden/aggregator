@@ -12,7 +12,7 @@ class TestApplicationLogic(AggregatorBaseTestSuite):
         space_state = self.aggregator.get_space_state_for_json(self.logger)
         self.assertEqual(space_state['users_in_space'], [{
             'machines_on': [],
-            'ts_checkin': '08:54:59 03/02/2019',
+            'ts_checkin': '08:55:00 03/02/2019',
             'ts_checkin_human': 'a moment ago',
             'user': {'email': 'stefano@stefanomasini.com',
                      'first_name': 'Stefano',
@@ -27,18 +27,18 @@ class TestApplicationLogic(AggregatorBaseTestSuite):
         space_state = self.aggregator.get_space_state_for_json(self.logger)
         self.assertEqual(space_state['users_in_space'], [])
         self.assertEqual(space_state['history'], [{
-            'description': 'User Stefano Masini entered the space at 08:54:59 03/02/2019',
+            'description': 'User Stefano Masini entered the space at 08:55:00 03/02/2019',
             'first_name': 'Stefano',
             'hl_type': 'UserEntered',
             'last_name': 'Masini',
-            'ts': 1549180499,
+            'ts': 1549184100,
             'user_id': 1
         }, {
-            'description': 'User Stefano Masini left the space at 09:54:59 03/02/2019',
+            'description': 'User Stefano Masini left the space at 09:55:00 03/02/2019',
             'first_name': 'Stefano',
             'hl_type': 'UserLeft',
             'last_name': 'Masini',
-            'ts': 1549184099,
+            'ts': 1549187700,
             'user_id': 1
         }])
 
@@ -50,31 +50,31 @@ class TestApplicationLogic(AggregatorBaseTestSuite):
                                   'min_required_people': 2,
                                   'name': 'Empty trash'},
                         'when': {'human_str': '07:30:00 26/02/2019',
-                                 'timestamp': 1551162600}},
+                                 'timestamp': 1551166200}},
                        {'chore': {'chore_id': 1,
                                   'description': 'Empty trash every 2 weeks',
                                   'min_required_people': 2,
                                   'name': 'Empty trash'},
                         'when': {'human_str': '07:30:00 12/03/2019',
-                                 'timestamp': 1552372200}},
+                                 'timestamp': 1552375800}},
                        {'chore': {'chore_id': 1,
                                   'description': 'Empty trash every 2 weeks',
                                   'min_required_people': 2,
                                   'name': 'Empty trash'},
                         'when': {'human_str': '07:30:00 26/03/2019',
-                                 'timestamp': 1553581800}},
+                                 'timestamp': 1553585400}},
                        {'chore': {'chore_id': 1,
                                   'description': 'Empty trash every 2 weeks',
                                   'min_required_people': 2,
                                   'name': 'Empty trash'},
-                        'when': {'human_str': '08:30:00 09/04/2019',
-                                 'timestamp': 1554791400}},
+                        'when': {'human_str': '07:30:00 09/04/2019',
+                                 'timestamp': 1554795000}},
                        {'chore': {'chore_id': 1,
                                   'description': 'Empty trash every 2 weeks',
                                   'min_required_people': 2,
                                   'name': 'Empty trash'},
-                        'when': {'human_str': '08:30:00 23/04/2019',
-                                 'timestamp': 1556001000}}]
+                        'when': {'human_str': '07:30:00 23/04/2019',
+                                 'timestamp': 1556004600}}]
 
         })
 
@@ -189,7 +189,7 @@ class TestApplicationLogic(AggregatorBaseTestSuite):
         self.assertEqual(space_state['users_in_space'], [
             {
                 'machines_on': [],
-                'ts_checkin': '08:54:59 03/02/2019',
+                'ts_checkin': '08:55:00 03/02/2019',
                 'ts_checkin_human': 'a moment ago',
                 'user': {'email': 'stefano@stefanomasini.com',
                          'first_name': 'Stefano',
@@ -205,7 +205,7 @@ class TestApplicationLogic(AggregatorBaseTestSuite):
         space_state = self.aggregator.get_space_state_for_json(self.logger)
         self.assertEqual(space_state['machines_on'], [
             {
-                'machine': {'name': 'Tablesaw', 'machine_id': 1}, 'ts': '08:54:59 03/02/2019', 'ts_human': 'a moment ago',
+                'machine': {'name': 'Tablesaw', 'machine_id': 1}, 'ts': '08:55:00 03/02/2019', 'ts_human': 'a moment ago',
                 'user': {'email': 'stefano@stefanomasini.com',
                          'first_name': 'Stefano',
                          'full_name': 'Stefano Masini',
@@ -214,14 +214,14 @@ class TestApplicationLogic(AggregatorBaseTestSuite):
                 }
         ])
         self.assertEqual(space_state['users_in_space'], [
-            {'machines_on': [{'machine': {'name': 'Tablesaw', 'machine_id': 1}, 'ts': '08:54:59 03/02/2019', 'ts_human': 'a moment ago',
+            {'machines_on': [{'machine': {'name': 'Tablesaw', 'machine_id': 1}, 'ts': '08:55:00 03/02/2019', 'ts_human': 'a moment ago',
                                                  'user': {'email': 'stefano@stefanomasini.com',
                                                           'first_name': 'Stefano',
                                                           'full_name': 'Stefano Masini',
                                                           'last_name': 'Masini',
                                                           'user_id': 1},
                                                  }],
-                                'ts_checkin': '08:54:59 03/02/2019',
+                                'ts_checkin': '08:55:00 03/02/2019',
                                 'ts_checkin_human': 'a moment ago',
                                 'user': {'email': 'stefano@stefanomasini.com',
                                          'first_name': 'Stefano',
@@ -238,7 +238,7 @@ class TestApplicationLogic(AggregatorBaseTestSuite):
         self.assertEqual(space_state['users_in_space'], [
             {
                 'machines_on': [],
-                'ts_checkin': '08:54:59 03/02/2019',
+                'ts_checkin': '08:55:00 03/02/2019',
                 'ts_checkin_human': 'a moment ago',
                 'user': {'email': 'stefano@stefanomasini.com',
                          'first_name': 'Stefano',

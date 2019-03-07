@@ -45,7 +45,12 @@ ALL_MACHINES = [
 
 EMPTY_TRASH = Chore(1, 'Empty trash', 'Empty trash every 2 weeks', 'BasicChore', {
     'min_required_people': 2,
-    'first_tuesday': '26/2/2019 7:30',
+    'events_generation': {
+        'event_type': 'recurrent',
+        'starting_time': '26/2/2019 7:00',
+        'crontab': '30 7 * * tue',  # Every Tuesday at 7:30
+        'take_one_every': 2,  # Every other 2 events, i.e. every other Tuesday at 7:30
+    },
     'reminders': [{
         'reminder_type': 'missing_volunteers',
         'when': {
@@ -83,6 +88,9 @@ EMPTY_TRASH = Chore(1, 'Empty trash', 'Empty trash every 2 weeks', 'BasicChore',
         },
     }],
 })
+
+# import json
+# print(json.dumps(EMPTY_TRASH.configuration, indent=2))
 
 ALL_CHORES = [
     EMPTY_TRASH,

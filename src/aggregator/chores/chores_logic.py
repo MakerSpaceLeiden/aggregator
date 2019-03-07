@@ -33,22 +33,50 @@ class ChoreEvent(object):
                 yield nudge
 
 
+class RecurrentEventGenerator(object):
+    def __init__(self, starting_time, crontab, take_one_every):
+        self.starting_time = Time.from_datetime(datetime.strptime(starting_time, '%d/%m/%Y %H:%M'))
+        self.crontab = crontab
+        self.take_one_every = take_one_every
+
+    def iter_events_from_to(self, aggregator, ts_from, ts_to):
+        for idx, ts in enumerate(Time.iter_crontab(self.crontab, self.starting_time)):
+            if ts > ts_to:
+                break
+            if ts >= ts_from and idx % self.take_one_every == 0:
+                yield ChoreEvent(aggregator, ts)
+
+
+class SingleOccurrenceEventGenerator(object):
+    def __init__(self, event_time):
+        self.event_time = Time.from_datetime(datetime.strptime(event_time, '%d/%m/%Y %H:%M'))
+
+    def iter_events_from_to(self, aggregator, ts_from, ts_to):
+        if ts_from <= self.event_time <= ts_to:
+            yield ChoreEvent(aggregator, self.event_time)
+
+
 class BasicChore(object):
-    def __init__(self, chore_id, name, description, min_required_people, first_tuesday, reminders):
+    def __init__(self, chore_id, name, description, min_required_people, events_generation, reminders):
         self.chore_id = chore_id
         self.name = name
         self.description = description
         self.min_required_people = min_required_people
-        self.first_tuesday = Time.from_datetime(datetime.strptime(first_tuesday, '%d/%m/%Y %H:%M'))
+
+        self.events_generator = None
+        event_type = events_generation['event_type']
+        data = dict(events_generation)
+        del data['event_type']
+        if event_type == 'recurrent':
+            self.events_generator = RecurrentEventGenerator(**data)
+        elif event_type == 'single_occurrence':
+            self.events_generator = SingleOccurrenceEventGenerator(**data)
+
         self.reminders = [build_reminder(self.min_required_people, **reminder) for reminder in reminders]
 
-    # Once every other week
     def iter_events_from_to(self, ts_from, ts_to):
-        ts = self.first_tuesday
-        while ts <= ts_to:
-            if ts >= ts_from:
-                yield ChoreEvent(self, ts)
-            ts = ts.add(14, 'days')
+        for event in self.events_generator.iter_events_from_to(self, ts_from, ts_to):
+            yield event
 
     def for_json(self):
         return {
@@ -132,11 +160,11 @@ class MissingVolunteersReminder(object):
         if params.now > reminder_time and len(params.volunteers) < self.min_required_people:
             for nudge in self.nudges:
                 if nudge['nudge_type'] == 'email':
-                    yield self._buildEmailNudge(event, nudge, params)
+                    yield self._build_email_nudge(event, nudge, params)
                 if nudge['nudge_type'] == 'volunteer_via_chat_bot':
                     yield VolunteerViaChatBotNudge(event, nudge, params)
 
-    def _buildEmailNudge(self, event, nudge, params):
+    def _build_email_nudge(self, event, nudge, params):
         template_data = {
             'event_day': event.ts.strftime('%a %d/%m/%Y %H:%M'),
             'chore_description': event.chore.description,
