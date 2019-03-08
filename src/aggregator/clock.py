@@ -88,7 +88,7 @@ class Time(object):
     def iter_crontab(cls, crontab, starting_ts):
         croniter_iterator = croniter(crontab, starting_ts.dt)
         while True:
-            dt = croniter_iterator.get_next(datetime)
+            dt = croniter_iterator.get_next(datetime).replace(tzinfo=local_timezone).astimezone(timezone.utc).replace(tzinfo=None)
             yield cls.from_datetime(dt)
 
 
