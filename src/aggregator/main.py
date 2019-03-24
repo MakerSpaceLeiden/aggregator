@@ -29,7 +29,7 @@ def _main(config):
     import os
     import asyncio
     from aggregator.http_server import run_http_server
-    from aggregator.timed_tasks import start_checking_for_stale_checkins, TaskScheduler
+    from aggregator.timed_tasks import start_checking_for_stale_checkins, start_checking_for_chores, TaskScheduler
     from aggregator.mqtt.mqtt_client import MqttListenerClient
     from aggregator.database import MySQLAdapter
     from aggregator.redis import RedisAdapter
@@ -124,6 +124,7 @@ def _main(config):
     # Start cronjobs
     if 'check_stale_checkins' in config:
         start_checking_for_stale_checkins(aggregator, worker_input_queue, config['check_stale_checkins']['crontab'], logger)
+    start_checking_for_chores(aggregator, worker_input_queue, logger)
     task_scheduler.start_running_scheduled_tasks(worker_input_queue)
 
     # Start HTTP server (blocks until Ctrl-C)

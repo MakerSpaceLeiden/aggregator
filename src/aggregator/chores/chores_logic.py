@@ -103,11 +103,16 @@ class EmailNudge(object):
         self.subject = subject
         self.body = body
 
+    def __str__(self):
+        return 'Email nudge. Chore: {0}, to: {1}, subject: {2}'.format(self.event.chore.name, self.destination, self.subject)
+
     def get_string_key(self):
         event_key = self.event.get_object_key()
         return '{0}-{1}-{2}'.format(self.nudge_key, event_key['chore_id'], event_key['ts'])
 
     def send(self, aggregator, logger):
+        logger = logger.getLogger(subsystem='chores')
+        logger.info('Sending email nudge to: {0}'.format(self.destination))
         aggregator.email_adapter.send_email(self.destination, self.destination, self, logger)
 
     # Honour the Message API (see messages.py)
@@ -125,12 +130,17 @@ class VolunteerViaChatBotNudge(object):
         self.nudge = nudge
         self.message_users_seen_no_later_than_days = params.message_users_seen_no_later_than_days
 
+    def __str__(self):
+        return 'Chat BOT nudge: {0}'.format(self.event.chore.name)
+
     def get_string_key(self):
         event_key = self.event.get_object_key()
         return '{0}-{1}-{2}'.format(self.nudge['nudge_key'], event_key['chore_id'], event_key['ts'])
 
     def send(self, aggregator, logger):
+        logger = logger.getLogger(subsystem='chores')
         users = aggregator.get_users_seen_no_later_than_days(self.message_users_seen_no_later_than_days, logger)
+        logger.info('Sending Chat BOT nudge to: {0}'.format(', '.join(['{0}'.format(u.full_name) for u in users])))
         for user in users:
             aggregator.send_user_notification(user, AskForVolunteeringNotification(user, self.event), logger)
 
@@ -140,11 +150,16 @@ class VolunteerReminderViaChatBotNudge(object):
         self.event = event
         self.volunteers = params.volunteers
 
+    def __str__(self):
+        return 'Volunteer reminder via Chat BOT: {0}'.format(self.event.chore.name)
+
     def get_string_key(self):
         event_key = self.event.get_object_key()
         return 'volunteer-reminder-{0}-{1}'.format(event_key['chore_id'], event_key['ts'])
 
     def send(self, aggregator, logger):
+        logger = logger.getLogger(subsystem='chores')
+        logger.info('Sending volunteering reminder to: {0}'.format(', '.join(['{0}'.format(u.full_name) for u in self.volunteers])))
         for user in self.volunteers:
             aggregator.send_user_notification(user, VolunteeringReminderNotification(user, self.event), logger)
 

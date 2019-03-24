@@ -359,6 +359,7 @@ class Aggregator(object):
         return [self._get_user_by_id(user_id, logger) for ts, user_id in ts_and_users if ts > threshold]
 
     def send_warnings_for_chores(self, logger):
+        logger = logger.getLogger(subsystem='aggregator')
         chores_logic = self._get_chores_logic(logger)
         now = self.clock.now()
         for event in chores_logic.iter_events_with_reminders_from_to(now.add(-self.chores_warnings_check_window_in_hours, 'hours'), now):
@@ -370,6 +371,7 @@ class Aggregator(object):
                 self.chores_message_users_seen_no_later_than_days,
             )
             for nudge in event.iter_nudges(params):
+                logger.info('Processing Chore nudge: {0}'.format(nudge))
                 if not self.redis_adapter.nudge_has_been_processed(nudge, logger):
                     nudge.send(self, logger)
                     self.redis_adapter.store_nudge_marker(nudge, logger)
