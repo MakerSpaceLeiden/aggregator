@@ -38,7 +38,7 @@ class MqttListenerClient(object):
         logger = self.logger.getLoggerWithRandomReqId('mqtt')
         try:
             try:
-                msg_str = msg.payload.decode('utf-8')
+                msg_str = msg.payload.replace(b'\x8a', b'').decode('utf-8')
             except UnicodeDecodeError:
                 logger.error(f'Received message, but cannot decode UTF-8: {repr(msg.payload)}')
                 return
