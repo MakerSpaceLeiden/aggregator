@@ -147,6 +147,15 @@ class Aggregator(object):
                 return True, ts_checkin
         return False, None
 
+    def check_expired_machine_state(self, logger):
+        logger = logger.getLogger(subsystem='aggregator')
+        for machine in self.redis_adapter.get_machines_on(logger):
+            machine_state = self.redis_adapter.get_machine_state(machine.node_machine_name, logger)
+            state_machine_on = self.redis_adapter.get_machine_on(machine, logger)
+            if state_machine_on and not machine_state:
+                logger.info('Machine {0} ON state expired. Cable must have been disconnected. Setting to off.')
+                self.redis_adapter.set_machine_off(machine, logger)
+
     def get_space_state_for_json(self, logger):
         logger = logger.getLogger(subsystem='aggregator')
         data = self.redis_adapter.get_user_ids_in_space_with_timestamps(logger)

@@ -16,6 +16,13 @@ def start_checking_for_chores(aggregator, worker_input_queue, logger):
         worker_input_queue.add_task(aggregator.clean_stale_user_checkins, logger)
 
 
+def start_checking_for_off_machines(aggregator, worker_input_queue, logger):
+    @aiocron.crontab('*/5 * * * *')  # Every five minutes
+    @asyncio.coroutine
+    def early_in_the_morning():
+        worker_input_queue.add_task(aggregator.check_expired_machine_state, logger)
+
+
 class TaskScheduler(object):
     def __init__(self, clock, logger):
         self.logger = logger.getLogger(subsystem='task_scheduler')
