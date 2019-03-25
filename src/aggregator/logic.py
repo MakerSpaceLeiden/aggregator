@@ -150,7 +150,7 @@ class Aggregator(object):
     def check_expired_machine_state(self, logger):
         logger = logger.getLogger(subsystem='aggregator')
         for machine in self.redis_adapter.get_machines_on(logger):
-            machine_state = self.redis_adapter.get_machine_state(machine.node_machine_name, logger)
+            machine_state = self.redis_adapter.get_machine_state(machine, logger)
             state_machine_on = self.redis_adapter.get_machine_on(machine, logger)
             if state_machine_on and not machine_state:
                 logger.info('Machine {0} ON state expired. Cable must have been disconnected. Setting to off.')
