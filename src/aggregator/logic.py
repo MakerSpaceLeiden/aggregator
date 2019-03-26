@@ -128,9 +128,9 @@ class Aggregator(object):
         # When space remains empty
         if is_last_user_leaving:
             # Check big switch
-            # space_open = self.redis_adapter.get_space_open(logger)
-            # if is_last_user_leaving and space_open:
-            #     problems.append(ProblemSpaceLeftOpen())
+            space_open = self.redis_adapter.get_space_open(logger)
+            if is_last_user_leaving and space_open:
+                problems.append(ProblemSpaceLeftOpen())
 
             # Check lights
             lights_on = self.redis_adapter.get_lights_on(logger)
