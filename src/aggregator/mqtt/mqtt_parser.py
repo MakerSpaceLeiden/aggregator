@@ -10,6 +10,8 @@ def parse_message(topic, message):
         return 'space_open', message == '1'
     if topic == 'makerspace/groteschakelaar/status':
         return 'space_open', message == 'open'
+    if topic == 'makerspace/groteschakelaar/status/' and message == 'werkend':
+        return 'ignore',
 
     if topic == 'ac/log/master' and message.startswith('JSON='):
         payload = json.loads(message[5:])

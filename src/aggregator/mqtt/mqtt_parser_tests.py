@@ -18,6 +18,10 @@ class TestMqttParsing(unittest.TestCase):
             parse_message('makerspace/groteschakelaar', '0'),
             ('space_open', False)
         )
+        self.assertEqual(
+            parse_message('makerspace/groteschakelaar/status/', 'werkend'),
+            ('ignore', )
+        )
 
     def test_door(self):
         self.assertEqual(
