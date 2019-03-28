@@ -121,7 +121,7 @@ class EmailNudge(object):
 
     # Honour the Message API (see messages.py)
     def get_email_text(self):
-        return self.body
+        return self.body + '\n'
 
 
 class VolunteerViaChatBotNudge(object):
