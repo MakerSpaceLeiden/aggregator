@@ -89,7 +89,7 @@ class MySQLAdapter(object):
             mycursor = db.cursor()
             mycursor.execute('''
                 SELECT members_user.id, members_user.first_name, members_user.last_name, members_user.email, members_user.telegram_user_id, members_user.phone_number, members_user.uses_signal, members_user.always_uses_email
-                FROM chores_chorevolunteer LEFT JOIN members_user ON (user_id)
+                FROM chores_chorevolunteer LEFT JOIN members_user ON (user_id = members_user.id)
                 WHERE chore_id = %s AND timestamp = %s
             ''', (event.chore.chore_id, event.ts.as_int_timestamp()))
         return [User(*row) for row in mycursor]
