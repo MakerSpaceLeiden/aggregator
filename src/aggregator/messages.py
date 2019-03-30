@@ -79,6 +79,9 @@ class MessageUnknown(BaseBotMessage):
         self.user = user
         self.allowed_commands = allowed_commands
 
+    def get_subject_for_email(self):
+        return 'Unknown command'
+
     def get_text(self):
         if self.allowed_commands:
             commands = ', '.join(f'"{c}"' for c in self.allowed_commands)
@@ -237,14 +240,20 @@ class ProblemsLeavingSpaceNotification(BaseBotMessage):
 class AskForVolunteeringNotification(BaseBotMessage):
     next_commands = YES_NO_COMMANDS
 
-    def __init__(self, user, event):
+    def __init__(self, user, event, urls):
         self.user = user
         self.event = event
+        self.urls = urls
 
     def get_text(self):
         chore_description = self.event.chore.description
         chore_event_ts_human = self.event.ts.strftime('%a %d/%m/%Y %H:%M')
-        return f"{self.user.first_name}, we need help for {chore_description} at {chore_event_ts_human}. Would you like to volunteer?"
+        return f"Hello {self.user.first_name}, your faithful Chat BOT here. We need help for {chore_description} at {chore_event_ts_human}. Would you like to volunteer?"
+
+    def get_email_text(self):
+        chore_description = self.event.chore.description
+        chore_event_ts_human = self.event.ts.strftime('%a %d/%m/%Y %H:%M')
+        return f"Hello {self.user.first_name}, your faithful Chat BOT here.\n\nWe need help for {chore_description} at {chore_event_ts_human}.\n\nWould you like to volunteer?\n\nIf so, please sign up in the CRM here: {self.urls.chores}"
 
     def get_subject_for_email(self):
         return f'Volunteer needed'

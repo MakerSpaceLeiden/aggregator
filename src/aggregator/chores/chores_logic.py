@@ -129,6 +129,7 @@ class VolunteerViaChatBotNudge(object):
         self.event = event
         self.nudge = nudge
         self.message_users_seen_no_later_than_days = params.message_users_seen_no_later_than_days
+        self.urls = params.urls
 
     def __str__(self):
         return 'Chat BOT nudge: {0}'.format(self.event.chore.name)
@@ -142,7 +143,7 @@ class VolunteerViaChatBotNudge(object):
         users = aggregator.get_users_seen_no_later_than_days(self.message_users_seen_no_later_than_days, logger)
         logger.info('Sending Chat BOT nudge to: {0}'.format(', '.join(['{0}'.format(u.full_name) for u in users])))
         for user in users:
-            aggregator.send_user_notification(user, AskForVolunteeringNotification(user, self.event), logger)
+            aggregator.send_user_notification(user, AskForVolunteeringNotification(user, self.event, self.urls), logger)
 
 
 class VolunteerReminderViaChatBotNudge(object):

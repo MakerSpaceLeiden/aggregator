@@ -49,7 +49,6 @@ class BotLogic(object):
                 self.chat_states.clear(chat_id)
                 return MessageCancelAction()
             else:
-                self.chat_states.clear(chat_id)
                 return MessageUnknown(user, [COMMAND_YES.text, COMMAND_NO.text])
 
         elif state == STATE_CONFIRM_VOLUNTEERING:
@@ -61,7 +60,6 @@ class BotLogic(object):
                 self.chat_states.clear(chat_id)
                 return MessageCancelAction()
             else:
-                self.chat_states.clear(chat_id)
                 return MessageUnknown(user, [COMMAND_YES.text, COMMAND_NO.text])
 
         else:

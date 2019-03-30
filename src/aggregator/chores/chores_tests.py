@@ -34,6 +34,13 @@ class TestChores(AggregatorBaseTestSuite):
         ])
         self.bot_messages = []
 
+        # Wrong confirmation via chat-bot
+        self.send_bot_message(STEFANO, 'wefwef')
+        self.assertEqual(self.bot_messages, [
+            (1, 'MessageUnknown'),
+        ])
+        self.bot_messages = []
+
         # Confirm volunteering via chat-bot
         self.send_bot_message(STEFANO, 'yes')
         self.assertEqual(self.bot_messages, [
