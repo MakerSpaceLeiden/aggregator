@@ -253,7 +253,7 @@ class AskForVolunteeringNotification(BaseBotMessage):
     def get_email_text(self):
         chore_description = self.event.chore.description
         chore_event_ts_human = self.event.ts.strftime('%a %d/%m/%Y %H:%M')
-        return f"Hello {self.user.first_name}, your faithful Chat BOT here.\n\nWe need help for {chore_description} at {chore_event_ts_human}.\n\nWould you like to volunteer?\n\nIf so, please sign up in the CRM here: {self.urls.chores}"
+        return f"Hello {self.user.first_name}, your faithful Chat BOT here.\n\nWe need help for {chore_description} at {chore_event_ts_human}.\n\nWould you like to volunteer?\n\nIf so, please sign up in the CRM here: {self.urls.chores()}"
 
     def get_subject_for_email(self):
         return f'Volunteer needed'
