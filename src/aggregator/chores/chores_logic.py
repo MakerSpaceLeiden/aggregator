@@ -173,7 +173,7 @@ class MissingVolunteersReminder(object):
 
     def iter_nudges(self, event, params):
         reminder_time = calculate_reminder_time(event, self.when)
-        if params.now > reminder_time and len(params.volunteers) < self.min_required_people:
+        if params.now > reminder_time and len(params.volunteers) == 0:
             for nudge in self.nudges:
                 if nudge['nudge_type'] == 'email':
                     yield self._build_email_nudge(event, nudge, params)
