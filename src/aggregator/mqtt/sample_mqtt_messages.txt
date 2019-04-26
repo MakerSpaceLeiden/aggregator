@@ -32315,3 +32315,5 @@ ac/voordeur/master - SIG/2.0 jiHMEz0ZgI6IKQoW/PQ8QhSRSF0JLUtTNQAwceAFenV5HMKvG46
 ac/spacedeur/master - SIG/2.0 jiHMEz0ZgI6IKQoW/PQ8QhSRSF0JLUtTNQAwceAFenV5HMKvG46+8PDFDx6kzeEl0TlLhhQfy1DQiwE0uPa3DA== 001549918551 beat
 makerspace/groteschakelaar - 1
 makerspace/groteschakelaar - 1
+ac/log/master - Member Hans Stroes approved action 'leave' 'byebye' on 'byebye'
+ac/log/master - JSON={"ok": true, "userid": 54, "name": "Hans Stroes", "email": "hans@stroesjes.nl", "machine": "byebye", "acl": "approved", "cmd": "leave"}

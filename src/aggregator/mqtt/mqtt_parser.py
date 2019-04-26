@@ -4,7 +4,6 @@ import json
 
 MACHINE_TAG_RE = re.compile(r'(?:ac|test)\/log\/(.*)')
 
-
 def parse_message(topic, message):
     if topic == 'makerspace/groteschakelaar':
         return 'space_open', message == '1'
@@ -15,7 +14,7 @@ def parse_message(topic, message):
 
     if topic == 'ac/log/master' and message.startswith('JSON='):
         payload = json.loads(message[5:])
-        if payload.get('userid', None) and payload.get('machine', None) == 'spacedeur' and payload.get('acl', None) == 'approved' and payload.get('cmd', None) == 'leave':
+        if payload.get('userid', None) and ( payload.get('machine', None) in [ 'spacedeur','byebye' ] ) and payload.get('acl', None) == 'approved' and payload.get('cmd', None) == 'leave':
             return 'user_left_space', payload['userid']
         elif payload.get('userid', None) and payload.get('machine', None) == 'spacedeur' and payload.get('acl', None) == 'approved' and payload.get('cmd', None) == 'energize':
             return 'user_entered_space', payload['userid']
