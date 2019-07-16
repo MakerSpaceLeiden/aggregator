@@ -1,5 +1,6 @@
 import json
 import logging
+import os.path
 from functools import wraps, partial
 
 
@@ -20,6 +21,11 @@ def run_http_server(loop, input_message_queue, aggregator, worker_input_queue, l
     logger = logger.getLogger(subsystem='http')
 
     from quart import Quart, websocket, request, Response, jsonify
+    from quart.static import send_file, safe_join
+    from quart.templating import render_template_string
+
+    from aggregator import kiosk as kiosk_module
+    import asyncio
 
     def with_basic_auth(f):
         @wraps(f)
@@ -51,6 +57,21 @@ def run_http_server(loop, input_message_queue, aggregator, worker_input_queue, l
     @app.route('/', methods=['GET'])
     async def root():
         return Response('MSL Aggregator', mimetype='text/plain')
+
+    @app.route('/kiosk', methods=['GET'])
+    async def kiosk():
+        html = await render_template_string(open(safe_join(os.path.dirname(kiosk_module.__file__), 'index.html'), 'r').read(),
+                                            bundle_url = '/kiosk/kiosk.js',
+                                            configuration = json.dumps({
+                                                'websockets_url_path': '/ws',
+                                                'space_state_url': '/space_state',
+                                            }),
+                                            )
+        return Response(html.encode('utf-8'), mimetype='text/html; charset=utf-8')
+
+    @app.route('/kiosk/kiosk.js', methods=['GET'])
+    async def kiosk_bundle():
+        return await send_file(safe_join(os.path.dirname(kiosk_module.__file__), 'kiosk_bundle.js'))
 
     @app.route('/tags', methods=['GET'])
     @with_basic_auth
@@ -114,24 +135,23 @@ def run_http_server(loop, input_message_queue, aggregator, worker_input_queue, l
         data = await worker_input_queue.add_task_with_result_future(aggregator.get_chores_for_json, request.logger)
         return jsonify(data)
 
-
     # -- Web Socket -----
 
-    # async def ws_sending():
-    #     while True:
-    #         msg = await input_message_queue.get_next_message()
-    #         await websocket.send(msg['text'])
-    #
-    # async def ws_receiving():
-    #     while True:
-    #         data = await websocket.receive()
-    #         print(f'received: {data}')
-    #
-    # @app.websocket('/ws')
-    # async def ws():
-    #     producer = asyncio.create_task(ws_sending())
-    #     consumer = asyncio.create_task(ws_receiving())
-    #     await asyncio.gather(producer, consumer)
+    async def ws_sending():
+        while True:
+            msg = await input_message_queue.get_next_message()
+            await websocket.send(msg['text'])
+
+    async def ws_receiving():
+        while True:
+            data = await websocket.receive()
+            print(f'received: {data}')
+
+    @app.websocket('/ws')
+    async def ws():
+        producer = asyncio.create_task(ws_sending())
+        consumer = asyncio.create_task(ws_receiving())
+        await asyncio.gather(producer, consumer)
 
     # -- Run server ----
 
