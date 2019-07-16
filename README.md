@@ -18,6 +18,7 @@ https://balsamiq.cloud/s84bb/pl6cb2r
 ## Installation and maintenance
 
 ### Requirements
+- Redis
 - git
 - Python 3.7
 - Python 3 venv
