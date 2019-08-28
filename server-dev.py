@@ -8,8 +8,8 @@ CONFIG = {
         'host': 'localhost',
         'port': 3306,
         'database': 'makerspace',
-        # 'user': '...',
-        # 'password': '...',
+        'user': os.environ.get('MSL_AGGREGATOR_DB_USER', None),
+        'password': os.environ.get('MSL_AGGREGATOR_DB_PASSWORD', None),
     },
 
     'redis': {
