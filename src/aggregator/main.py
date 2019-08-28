@@ -1,7 +1,3 @@
-import daemon
-import daemon.pidfile
-
-
 def run_aggregator(config):
     # Run locally
     if not config.get('daemon', None):
@@ -9,6 +5,8 @@ def run_aggregator(config):
         return
 
     # Production: run as daemon
+    import daemon
+    import daemon.pidfile
     with daemon.DaemonContext(
             working_directory=config['daemon'].get('work_dir'),
             umask=config['daemon'].get('umask'),
