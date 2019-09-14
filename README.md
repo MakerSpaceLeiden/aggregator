@@ -57,6 +57,8 @@ Run the tests:
 
 Server server runs in production using systemd.
 
+Location: /usr/local/aggregator
+
 Environment variables:
 
     sudo systemctl show-environment
