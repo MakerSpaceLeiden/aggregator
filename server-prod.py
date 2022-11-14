@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import sys
+from mysql.connector.constants import ClientFlag
 
 # In production, using systemd, to set environment variables use:
 # systemctl set-environment var=value
@@ -22,10 +23,14 @@ CONFIG = {
     },
 
     'mysql': {
-        'host': 'localhost',
-        'port': 3306,
+#        'host': 'localhost',
+#        'port': 20553,
+        'unix_socket': '/var/run/mysqld/mysqld.sock',
         'database': 'mslcrm',
         'user': 'mslcrmuser',
+#        'ssl_ca': '/usr/local/aggregator/ca.pem',
+#        'ssl_cert': '/usr/local/aggregator/cert.pem',
+#        'ssl_key': '/usr/local/aggregator/cert.key',
         'password': os.environ['MSL_AGGREGATOR_MYSQL_PASSWORD'],
     },
 

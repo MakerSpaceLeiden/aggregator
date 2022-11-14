@@ -2,19 +2,15 @@ import json
 import mysql.connector
 from contextlib import contextmanager
 from aggregator.model import User, Tag, Machine, Chore
-
+from mysql.connector.constants import ClientFlag
 
 class MySQLAdapter(object):
-    def __init__(self, host, database, port, user=None, password=None):
-        self.host = host
-        self.database = database
-        self.port = port
-        self.user = user
-        self.password = password
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
 
     @contextmanager
     def _connection(self):
-        db = mysql.connector.connect(host=self.host, database=self.database, port=self.port, user=self.user, password=self.password)
+        db = mysql.connector.connect(** self.__dict__)
         yield db
         db.close()
 
