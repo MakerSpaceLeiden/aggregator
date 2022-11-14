@@ -352,12 +352,23 @@ class Aggregator(object):
             self.send_user_notification(user, MachineLeftOnNotification(machine), logger)
 
     def _get_chores_logic(self, logger):
-        return ChoresLogic(self.database_adapter.get_all_chores(logger))
+        try:
+           logger.info('ok 1')
+           return ChoresLogic(self.database_adapter.get_all_chores(logger))
+           logger.info('ok 2')
+        except Exception as e:
+           logger.exception('Unexpected exception {}'.format(e))
 
     def get_chores_for_json(self, logger):
-        chores_logic = self._get_chores_logic(logger)
-        now = self.clock.now()
-        events = chores_logic.get_events_from_to(now, now.add(self.chores_timeframe_in_days, 'days'))
+        try:
+           logger.info('ok 3')
+           chores_logic = self._get_chores_logic(logger)
+           now = self.clock.now()
+           events = chores_logic.get_events_from_to(now, now.add(self.chores_timeframe_in_days, 'days'))
+        except Exception as e:
+           logger.exception('Unexpected exception {}'.format(e))
+
+        logger.info(events)
         return {
             'events': [event.for_json() for event in events],
         }

@@ -75,8 +75,9 @@ class BasicChore(object):
         self.reminders = [build_reminder(self.min_required_people, **reminder) for reminder in reminders]
 
     def iter_events_from_to(self, ts_from, ts_to):
-        for event in self.events_generator.iter_events_from_to(self, ts_from, ts_to):
-            yield event
+        if self.events_generator:
+            for event in self.events_generator.iter_events_from_to(self, ts_from, ts_to):
+                 yield event
 
     def for_json(self):
         return {
@@ -239,7 +240,6 @@ def get_chore_type_class(chore):
 def build_chore_instance(chore):
     chore_class = get_chore_type_class(chore)
     return chore_class(chore.chore_id, chore.name, chore.description, **chore.configuration)
-
 
 def build_reminder(min_required_people, reminder_type, when, nudges=None):
     if reminder_type == 'missing_volunteers':

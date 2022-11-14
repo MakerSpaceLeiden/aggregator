@@ -21,8 +21,8 @@ def run_http_server(loop, input_message_queue, aggregator, worker_input_queue, l
     logger = logger.getLogger(subsystem='http')
 
     from quart import Quart, websocket, request, Response, jsonify
-    from quart.static import send_file, safe_join
-    from quart.templating import render_template_string
+    from quart import send_file, safe_join
+    from quart import render_template_string
 
     from aggregator import kiosk as kiosk_module
     import asyncio
@@ -129,8 +129,8 @@ def run_http_server(loop, input_message_queue, aggregator, worker_input_queue, l
         await worker_input_queue.add_task_with_result_future(partial(aggregator.user_left_space, request_payload['user_id']), request.logger)
         return Response('Ok', mimetype='text/plain')
 
-    @app.route('/chores/overview', methods=['POST'])
-    @with_basic_auth
+    @app.route('/chores/overview', methods=['POST','GET'])
+    # @with_basic_auth
     async def chores_overview():
         data = await worker_input_queue.add_task_with_result_future(aggregator.get_chores_for_json, request.logger)
         return jsonify(data)
