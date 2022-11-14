@@ -2,7 +2,6 @@ import json
 import mysql.connector
 from contextlib import contextmanager
 from aggregator.model import User, Tag, Machine, Chore
-from mysql.connector.constants import ClientFlag
 
 class MySQLAdapter(object):
     def __init__(self, **kwargs):
