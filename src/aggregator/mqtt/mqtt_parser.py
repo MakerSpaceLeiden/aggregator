@@ -20,6 +20,7 @@ def parse_message(topic, message):
             return 'user_entered_space', payload['userid']
         elif payload.get('userid', None) and payload.get('machine', None) and payload.get('acl', None) == 'approved':
             return 'user_activated_machine', payload['userid'], payload['machine']
+        return 'ignore'
 
     if topic == 'test/log/lights' and message.startswith('lights {'):
         payload = json.loads(message[7:])
@@ -161,4 +162,9 @@ MESAGES_TO_IGNORE = [
     'OTA: Begin failed',
     'Failed to send',
     'seconds off (max leeway is',
+    'Unknown signature format ',
+    'Got disconnected',
+    '(re)connected',
+    'lights ',
+    '{',
 ]
