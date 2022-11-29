@@ -27,6 +27,7 @@ CONFIG = {
         'unix_socket': '/var/run/mysqld/mysqld.sock',
         'database': 'mslcrm',
         'user': 'mslcrmuser',
+        'auth_plugin': 'mysql_native_password',
         'password': os.environ['MSL_AGGREGATOR_MYSQL_PASSWORD'],
     },
 
