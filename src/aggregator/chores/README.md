@@ -3,7 +3,7 @@
 A "chore" is a one-shot or recurring (configurable in different ways) event that requires a certain 
 number of members to be carried out.
 
-The aggregator is where the logic lives, and the CRM only provides a way to create the DB records, 
+The aggregator is where the logic lives, and mijn.makerspaceleiden.nl only provides a way to create the DB records, 
 show the upcoming chores and allow volunteering.
 
 ### State
