@@ -51,7 +51,7 @@ class BaseBotMessage(object):
 class MessageNotRegistered(BaseBotMessage):
     message = (
         "Hi! I'm the MakerSpace Leiden BOT.\n"
-        "In order to interact with me you must first connect your CRM account.\n"
+        "In order to interact with me you must first connect your mijn.makerspaceleiden.nl account.\n"
         "You can do that from the your Your Data page, in the Notification Settings."
     )
 
@@ -156,9 +156,9 @@ class StaleCheckoutNotification(BaseBotMessage):
             "Checking out is useful so that other people know when to expect other fellow makers at the space, and it allows me to provide useful reminders, "
             "like if the lights are still on when the last person leaves.\n\n"
             "Checking out can be done when you leave, by simply swiping your card again, while you hold the door open on your way out.\n"
-            f"Or it can also be done via the Space State page in the CRM: {self.space_state_url}\n"
+            f"Or it can also be done via the Space State page: {self.space_state_url}\n"
             "Or via the Chat BOT (Telegram or Signal). If you would like to use the BOT, you can activate it from your personal data "
-            f"page in the CRM: {self.notification_settings_url}\n\n"
+            f"page: {self.notification_settings_url}\n\n"
             "The MakerSpace BOT\n\n"
             "PS. If you would rather receive these communications via the Chat BOT instead of email, you can configure your notification settings at the URL above."
         )
@@ -253,7 +253,7 @@ class AskForVolunteeringNotification(BaseBotMessage):
     def get_email_text(self):
         chore_description = self.event.chore.description
         chore_event_ts_human = self.event.ts.strftime('%a %d/%m/%Y %H:%M')
-        return f"Hello {self.user.first_name}, your faithful Chat BOT here.\n\nWe need help for {chore_description} at {chore_event_ts_human}.\n\nWould you like to volunteer?\n\nIf so, please sign up in the CRM here: {self.urls.chores()}"
+        return f"Hello {self.user.first_name}, your faithful Chat BOT here.\n\nWe need help for {chore_description} at {chore_event_ts_human}.\n\nWould you like to volunteer?\n\nIf so, please sign up in: {self.urls.chores()}"
 
     def get_subject_for_email(self):
         return f'Volunteer needed'

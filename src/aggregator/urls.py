@@ -1,9 +1,9 @@
 class Urls(object):
     def notification_settings(self):
-        return 'https://makerspaceleiden.nl/crm/notifications/settings'
+        return 'https://mijn.makerspaceleiden.nl/notifications/settings'
 
     def space_state(self):
-        return 'https://makerspaceleiden.nl/crm/space_state'
+        return 'https://mijn.makerspaceleiden.nl/space_state'
 
     def chores(self):
-        return 'https://makerspaceleiden.nl/crm/chores/'
+        return 'https://mijn.makerspaceleiden.nl/chores/'
