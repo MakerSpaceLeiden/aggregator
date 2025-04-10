@@ -1,74 +1,102 @@
 # MakerSpace Leiden Aggregator
 
+Welcome to the MakerSpace Leiden Aggregator. This software aggregates and distributes real-time information about the makerspace.
+- [Features](#features)
+- [System Design](#system-design)
+  - [Architecture](#architecture)
+- [Quick Start Guide](#quick-start-guide)
+  - [System Requirements](#system-requirements)
+  - [Installation](#installation)
+  - [Running Locally](#running-locally)
+  - [Testing](#testing)
+- [For Developers](#for-developers)
+  - [Production Environment](#production-environment)
+
+## Features
+
 - Listens to MQTT messages
 - Aggregates useful information (like who is at the space now, what machines are on, etc.)
 - Publishes the information live via HTTP and WebSockets
 
-## Architecture
+## System Design
 
-https://balsamiq.cloud/s84bb/pl6cb2r
+### Architecture
 
-![Aggregator Architecture](Aggregator%20Architecture.png)
+![Aggregator Architecture Diagram](Aggregator%20Architecture.png)
+
+Architecture diagram also available at: https://balsamiq.cloud/s84bb/pl6cb2r
 
 
-## Features
+## Quick Start Guide
 
-- [Chores](./src/aggregator/chores/README.md)
-
-## Installation and maintenance
-
-### Requirements
-- Redis
-- git
+### System Requirements
 - Python 3.7
 - Python 3 venv
- 
-  E.g:
- 
-      apt install python3 python3-venv git
+- Redis
+- git
 
-- Recent copy of the code:
+### Installation
 
-      git clone https://github.com/MakerSpaceLeiden/aggregator.git
+**Standard Setup**
 
-### Setup virtual environment
+1. Clone the repository:
+   ```
+   git clone https://github.com/MakerSpaceLeiden/aggregator.git
+   ```
+2. Set up virtual environment:
+   ```
+   python3.7 -m venv venv
+   . venv/bin/activate
+   ```
+3. Install Python dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
 
-    python3.7 -m venv venv
-    . venv/bin/activate
-
-### Install dependencies
-
-    pip install -r requirements.txt 
-
-_NOTE_: OSX 10.14 users with a locked down ~/Library: use
-`pip install --no-cache-dir -r requirements.txt`
+**Note for OSX 10.14 users**: If you have a locked down ~/Library, use:
+```
+pip install --no-cache-dir -r requirements.txt
+```
 to avoid having to write in `~/Library/Caches/pip/wheel`.
 
-### Run server locally
+### Running Locally
+After installation, start the development server:
+```
+python server-dev.py
+```
 
-    python server-dev.py
-    
-Run the tests:
+### Testing
+Run the test suite with:
+```
+python run-tests.py
+```
 
-    python run-tests.py
+## For Developers
+
+Please refer to the feature documentation in the source directories for detailed information on specific components:
+- [Chores](./src/aggregator/chores/README.md)
 
 
-### Production
+### Production Environment
+The server runs in production using systemd.
 
-Server server runs in production using systemd.
+**Location**: /usr/local/aggregator
 
-Location: /usr/local/aggregator
-
-Environment variables:
-
-    sudo systemctl show-environment
-    sudo systemctl set-environment var=value
-
-Restart with:
-
-    sudo systemctl restart msl_aggregator
-
-Show logs with:
-
-    sudo journalctl _PID=<pid>
-    sudo journalctl --since="10 minutes ago"
+**Managing the Service**:
+- View environment:
+  ```
+  sudo systemctl show-environment
+  ```
+- Set environment variables:
+  ```
+  sudo systemctl set-environment var=value
+  ```
+- Restart service:
+  ```
+  sudo systemctl restart msl_aggregator
+  ```
+- View logs:
+  ```
+  sudo journalctl _PID=<pid>
+  sudo journalctl --since="10 minutes ago"
+  ```
