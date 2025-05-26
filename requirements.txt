@@ -16,3 +16,6 @@ python-telegram-bot
 
 # Signal BOT
 dbussy
+
+# Development tools
+coverage
