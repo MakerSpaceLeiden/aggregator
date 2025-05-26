@@ -14,7 +14,7 @@ jobs:
         run: sudo apt-get install -y redis-tools redis-server
       - name: Verify that redis is up
         run: redis-cli ping
+      - name: Install dependencies
+        run: pip install -r requirements.txt
       - name: Run tests
-        run: |
-          pip install -r requirements.txt
-          python run-tests.py
+        run: python run-tests.py
