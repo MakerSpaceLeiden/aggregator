@@ -1,27 +1,83 @@
 #!/usr/bin/env python
 import sys
-import unittest
-
+import os
+import subprocess
+import argparse
 from pathlib import Path
 
 def main():
-    """Set up environment and use unit tests built-in discovery."""
+    """Set up environment and run tests with optional coverage analysis."""
+    parser = argparse.ArgumentParser(description='Run tests with optional coverage analysis')
+    parser.add_argument('--coverage', action='store_true',
+                       help='Run tests with coverage analysis')
+
+    args = parser.parse_args()
+
     src_dir = Path(__file__).parent / 'src'
+
+    # Set up environment
+    env = os.environ.copy()
+    env['PYTHONPATH'] = str(src_dir)
+
+    # Set timezone before running tests
+    setup_timezone(src_dir, env)
+
+    if args.coverage:
+        run_tests_with_coverage(src_dir, env, args)
+    else:
+        run_tests_without_coverage(src_dir, env)
+
+def setup_timezone(src_dir, env):
+    """Set up timezone configuration."""
     sys.path.insert(0, str(src_dir))
+    try:
+        from aggregator.clock import set_local_timezone_to_utc
+        set_local_timezone_to_utc()
+    except ImportError:
+        print("Warning: Could not import timezone setup")
 
-    from aggregator.clock import set_local_timezone_to_utc
-    set_local_timezone_to_utc()
+def run_tests_with_coverage(src_dir, env, args):
+    """Run tests with coverage analysis using coverage run."""
+    print("Running tests with coverage analysis...")
 
-    # Use unittest
-    sys.argv = [
-        'unittest', 'discover',
+    # Run tests with coverage
+    cmd = [
+        'coverage', 'run',
+        '--source', str(src_dir),
+        '--omit', f'{src_dir}/*/tests/*,{src_dir}/*/*_tests.py,{src_dir}/*/test_*.py',
+        '-m', 'unittest', 'discover',
         '-s', str(src_dir),
         '-p', '*_tests.py',
         '-t', str(src_dir),
         '-v'
     ]
 
-    unittest.main(module=None)
+    result = subprocess.run(cmd, env=env)
+
+    if result.returncode != 0:
+        print("Tests failed!")
+        sys.exit(result.returncode)
+
+    # Generate coverage report
+    print("\n" + "="*50)
+    print("COVERAGE REPORT")
+    print("="*50)
+
+    subprocess.run(['coverage', 'report', '--show-missing'])
+
+def run_tests_without_coverage(src_dir, env):
+    """Run tests without coverage analysis."""
+    cmd = [
+        'python', '-m', 'unittest', 'discover',
+        '-s', str(src_dir),
+        '-p', '*_tests.py',
+        '-t', str(src_dir),
+        '-v'
+    ]
+
+    result = subprocess.run(cmd, env=env)
+    sys.exit(result.returncode)
+
 
 if __name__ == '__main__':
     main()
