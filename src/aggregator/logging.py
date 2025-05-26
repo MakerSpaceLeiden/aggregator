@@ -1,41 +1,53 @@
 import logging
 from logging.handlers import TimedRotatingFileHandler
+
 from .utils import make_random_string
 
 
 def configure_logging(log_filepath=None, when=None, interval=None, backup_count=None):
-    formatter = DispatchingFormatter({
-        'aggregator': logging.Formatter('%(asctime)s - %(name)s - %(req_id)s - %(subsystem)s - %(levelname)s - %(message)s'),
-        'quart.serving': logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'),
-        'quart.app': logging.Formatter('%(asctime)s - %(name)s - %(levelname)s in %(module)s: %(message)s'),
-    }, logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    formatter = DispatchingFormatter(
+        {
+            "aggregator": logging.Formatter(
+                "%(asctime)s - %(name)s - %(req_id)s - %(subsystem)s - %(levelname)s - %(message)s"
+            ),
+            "quart.serving": logging.Formatter(
+                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            ),
+            "quart.app": logging.Formatter(
+                "%(asctime)s - %(name)s - %(levelname)s in %(module)s: %(message)s"
+            ),
+        },
+        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"),
+    )
 
     if log_filepath:
-        handler = TimedRotatingFileHandler(log_filepath, when=when, interval=interval, backupCount=backup_count)
+        handler = TimedRotatingFileHandler(
+            log_filepath, when=when, interval=interval, backupCount=backup_count
+        )
     else:
         handler = logging.StreamHandler()
     handler.setLevel(logging.DEBUG)
     handler.setFormatter(formatter)
 
     # Our own internal application logger wrapper
-    logger = logging.getLogger('aggregator')
+    logger = logging.getLogger("aggregator")
     logger.setLevel(logging.DEBUG)
     logger.addHandler(handler)
-    application_logger = Logger(logger, subsystem='root')
+    application_logger = Logger(logger, subsystem="root")
 
     return application_logger, handler
 
 
 def configure_logging_for_tests():
-    logger = logging.getLogger('aggregator')
+    logger = logging.getLogger("aggregator")
     logger.setLevel(logging.DEBUG)
-    return Logger(logger, subsystem='root')
+    return Logger(logger, subsystem="root")
 
 
 class Logger(object):
     def __init__(self, python_logger, **extra):
-        extra.setdefault('subsystem', '')
-        extra.setdefault('req_id', '__n/a__')
+        extra.setdefault("subsystem", "")
+        extra.setdefault("req_id", "__n/a__")
         self.python_logger = python_logger
         self.extra = extra
 
@@ -61,11 +73,12 @@ class Logger(object):
 
     def getLoggerWithRandomReqId(self, prefix):
         new_extra = self.extra.copy()
-        new_extra['req_id'] = f'{prefix}-{make_random_string(7)}'
+        new_extra["req_id"] = f"{prefix}-{make_random_string(7)}"
         return Logger(self.python_logger, **new_extra)
 
 
 # From https://stackoverflow.com/a/34626685
+
 
 class DispatchingFormatter:
     def __init__(self, formatters, default_formatter):

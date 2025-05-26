@@ -2,18 +2,18 @@ from collections import namedtuple
 
 # -- BOT Commands ----
 
-Command = namedtuple('Command', 'text description')
+Command = namedtuple("Command", "text description")
 
 
-COMMAND_WHO = Command('who', 'Show the last checkins at the Space')
-COMMAND_HELP = Command('help', 'Show the available commands')
-COMMAND_OUT = Command('out', 'Check-out of the Space')
-COMMAND_CHECKIN = Command('checkin', 'Check-in to the Space')
+COMMAND_WHO = Command("who", "Show the last checkins at the Space")
+COMMAND_HELP = Command("help", "Show the available commands")
+COMMAND_OUT = Command("out", "Check-out of the Space")
+COMMAND_CHECKIN = Command("checkin", "Check-in to the Space")
 
 BASIC_COMMANDS = (COMMAND_WHO, COMMAND_HELP, COMMAND_OUT)
 
-COMMAND_YES = Command('yes', 'Yes')
-COMMAND_NO = Command('no', 'No')
+COMMAND_YES = Command("yes", "Yes")
+COMMAND_NO = Command("no", "No")
 YES_NO_COMMANDS = (COMMAND_YES, COMMAND_NO)
 
 
@@ -30,7 +30,7 @@ YES_NO_COMMANDS = (COMMAND_YES, COMMAND_NO)
 
 class BaseBotMessage(object):
     next_commands = BASIC_COMMANDS
-    message = ''
+    message = ""
 
     def get_markdown(self):
         return self.get_text()
@@ -42,7 +42,7 @@ class BaseBotMessage(object):
         return self.get_text()
 
     def get_subject_for_email(self):
-        return ''
+        return ""
 
     def set_chat_state(self, chat_id, bot_logic):
         pass
@@ -63,15 +63,21 @@ class MessageWho(BaseBotMessage):
 
     def get_text(self):
         lines = [
-            f'''{self.user.first_name}, the space is marked as {'OPEN' if self.space_status["space_open"] else "closed"}.'''
+            f"""{self.user.first_name}, the space is marked as {'OPEN' if self.space_status["space_open"] else "closed"}."""
         ]
-        if not self.space_status['users_in_space']:
-            lines.append('''There's no one at the space now.''')
+        if not self.space_status["users_in_space"]:
+            lines.append("""There's no one at the space now.""")
         else:
-            lines.append('Latest checkins today:')
-            for user_data in self.space_status['users_in_space']:
-                lines.append(' - {0} ({1} - {2})'.format(user_data['user']['full_name'], user_data['ts_checkin_human'], user_data['ts_checkin']))
-        return '\n'.join(lines)
+            lines.append("Latest checkins today:")
+            for user_data in self.space_status["users_in_space"]:
+                lines.append(
+                    " - {0} ({1} - {2})".format(
+                        user_data["user"]["full_name"],
+                        user_data["ts_checkin_human"],
+                        user_data["ts_checkin"],
+                    )
+                )
+        return "\n".join(lines)
 
 
 class MessageUnknown(BaseBotMessage):
@@ -80,14 +86,14 @@ class MessageUnknown(BaseBotMessage):
         self.allowed_commands = allowed_commands
 
     def get_subject_for_email(self):
-        return 'Unknown command'
+        return "Unknown command"
 
     def get_text(self):
         if self.allowed_commands:
-            commands = ', '.join(f'"{c}"' for c in self.allowed_commands)
-            return f"Sorry {self.user.first_name}, I don't understand that command. Try {commands} or \"help\"."
+            commands = ", ".join(f'"{c}"' for c in self.allowed_commands)
+            return f'Sorry {self.user.first_name}, I don\'t understand that command. Try {commands} or "help".'
         else:
-            return f"Sorry {self.user.first_name}, I don't understand that command. Try \"help\"."
+            return f'Sorry {self.user.first_name}, I don\'t understand that command. Try "help".'
 
 
 class MessageHelp(BaseBotMessage):
@@ -96,11 +102,13 @@ class MessageHelp(BaseBotMessage):
         self.commands = commands
 
     def get_text(self):
-        commands_text = '\n'.join(f'{command.text} - {command.description}' for command in self.commands)
+        commands_text = "\n".join(
+            f"{command.text} - {command.description}" for command in self.commands
+        )
         return (
             f"Hello {self.user.first_name}! I'm the MakerSpace Leiden BOT.\n"
             "I try to help where I can, reminding people to turn off machines, and stuff like that.\n"
-            f'These are the commands you can type:\n{commands_text}'
+            f"These are the commands you can type:\n{commands_text}"
         )
 
 
@@ -132,7 +140,7 @@ class MessageConfirmedCheckout(BaseBotMessage):
 
 
 class MessageCancelAction(BaseBotMessage):
-    message = 'Ok, never mind.'
+    message = "Ok, never mind."
 
 
 # -- Notifications ----
@@ -146,7 +154,7 @@ class StaleCheckoutNotification(BaseBotMessage):
         self.space_state_url = space_state_url
 
     def get_text(self):
-        return f'Did you forget to checkout yesterday?\nYou entered the Space at {self.ts_checkin.human_str()}'
+        return f"Did you forget to checkout yesterday?\nYou entered the Space at {self.ts_checkin.human_str()}"
 
     def get_email_text(self):
         return (
@@ -164,7 +172,7 @@ class StaleCheckoutNotification(BaseBotMessage):
         )
 
     def get_subject_for_email(self):
-        return 'Forgot to checkout'
+        return "Forgot to checkout"
 
 
 class MachineLeftOnNotification(BaseBotMessage):
@@ -175,7 +183,7 @@ class MachineLeftOnNotification(BaseBotMessage):
         return f"You forgot to press the red button on the {self.machine.name}! But don't worry: it turned off automatically. Just don't forget next time. ;-)"
 
     def get_subject_for_email(self):
-        return f'{self.machine.name} left on'
+        return f"{self.machine.name} left on"
 
 
 class TestNotification(BaseBotMessage):
@@ -195,7 +203,7 @@ class TestNotification(BaseBotMessage):
         )
 
     def get_subject_for_email(self):
-        return 'Test notification'
+        return "Test notification"
 
 
 class ProblemsLeavingSpaceNotification(BaseBotMessage):
@@ -208,33 +216,43 @@ class ProblemsLeavingSpaceNotification(BaseBotMessage):
     def get_text(self):
         lines = []
         if self.is_last_user_leaving:
-            lines.append(f'{self.user.first_name}, it appears you were the last leaving the space at {self.ts_checkout.human_str()}.')
+            lines.append(
+                f"{self.user.first_name}, it appears you were the last leaving the space at {self.ts_checkout.human_str()}."
+            )
         else:
-            lines.append(f'{self.user.first_name}, it appears you left the space at {self.ts_checkout.human_str()}.')
-        lines.append('I noticed the following issues:')
+            lines.append(
+                f"{self.user.first_name}, it appears you left the space at {self.ts_checkout.human_str()}."
+            )
+        lines.append("I noticed the following issues:")
         for problem in self.problems:
-            lines.append(' - ' + problem.get_text())
-        lines.append('Please remember to take care of this sort of things when you leave the space!')
-        return '\n'.join(lines)
+            lines.append(" - " + problem.get_text())
+        lines.append(
+            "Please remember to take care of this sort of things when you leave the space!"
+        )
+        return "\n".join(lines)
 
     def get_email_text(self):
-        lines = [
-            f"Hello {self.user.first_name},\n"
-        ]
+        lines = [f"Hello {self.user.first_name},\n"]
         if self.is_last_user_leaving:
-            lines.append(f'It appears you were the last leaving the space at {self.ts_checkout.human_str()}.')
+            lines.append(
+                f"It appears you were the last leaving the space at {self.ts_checkout.human_str()}."
+            )
         else:
-            lines.append(f'It appears you left the space at {self.ts_checkout.human_str()}.')
-        lines.append('\nI noticed the following issues:')
+            lines.append(
+                f"It appears you left the space at {self.ts_checkout.human_str()}."
+            )
+        lines.append("\nI noticed the following issues:")
         for problem in self.problems:
-            lines.append(' - ' + problem.get_text())
-        lines.append('\nPlease remember to take care of this sort of things when you leave the space!')
-        lines.append('\nYours truly,')
+            lines.append(" - " + problem.get_text())
+        lines.append(
+            "\nPlease remember to take care of this sort of things when you leave the space!"
+        )
+        lines.append("\nYours truly,")
         lines.append("The MakerSpace BOT")
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def get_subject_for_email(self):
-        return 'Forgotten when leaving the space'
+        return "Forgotten when leaving the space"
 
 
 class AskForVolunteeringNotification(BaseBotMessage):
@@ -247,33 +265,32 @@ class AskForVolunteeringNotification(BaseBotMessage):
 
     def get_text(self):
         chore_description = self.event.chore.description
-        chore_event_ts_human = self.event.ts.strftime('%a %d/%m/%Y %H:%M')
+        chore_event_ts_human = self.event.ts.strftime("%a %d/%m/%Y %H:%M")
         return f"Hello {self.user.first_name}, your faithful Chat BOT here. We need help for {chore_description} at {chore_event_ts_human}. Would you like to volunteer?"
 
     def get_email_text(self):
         chore_description = self.event.chore.description
-        chore_event_ts_human = self.event.ts.strftime('%a %d/%m/%Y %H:%M')
+        chore_event_ts_human = self.event.ts.strftime("%a %d/%m/%Y %H:%M")
         return f"Hello {self.user.first_name}, your faithful Chat BOT here.\n\nWe need help for {chore_description} at {chore_event_ts_human}.\n\nWould you like to volunteer?\n\nIf so, please sign up in: {self.urls.chores()}"
 
     def get_subject_for_email(self):
-        return f'Volunteer needed'
+        return "Volunteer needed"
 
     def set_chat_state(self, chat_id, bot_logic):
-        bot_logic.chat_states.set(chat_id,
-                                  STATE_CONFIRM_VOLUNTEERING,
-                                  expiration_in_min=30,  # Half hour
-                                  metadata={
-                                      'user_id': self.user.user_id,
-                                      'event': self.event
-                                  })
+        bot_logic.chat_states.set(
+            chat_id,
+            STATE_CONFIRM_VOLUNTEERING,
+            expiration_in_min=30,  # Half hour
+            metadata={"user_id": self.user.user_id, "event": self.event},
+        )
 
 
 class MessageConfirmedVolunteering(BaseBotMessage):
     def get_text(self):
-        return 'Volunteering confirmed!'
+        return "Volunteering confirmed!"
 
     def get_subject_for_email(self):
-        return 'Volunteering confirmed'
+        return "Volunteering confirmed"
 
 
 class MessageVolunteeringNotNecessary(BaseBotMessage):
@@ -281,7 +298,7 @@ class MessageVolunteeringNotNecessary(BaseBotMessage):
         return "Thanks, but that's not necessary anymore! Enough people have volunteered already."
 
     def get_subject_for_email(self):
-        return 'Volunteering not necessary anymore'
+        return "Volunteering not necessary anymore"
 
 
 class VolunteeringReminderNotification(BaseBotMessage):
@@ -291,11 +308,11 @@ class VolunteeringReminderNotification(BaseBotMessage):
 
     def get_text(self):
         chore_description = self.event.chore.description
-        chore_event_ts_human = self.event.ts.strftime('%a %d/%m/%Y %H:%M')
+        chore_event_ts_human = self.event.ts.strftime("%a %d/%m/%Y %H:%M")
         return f"{self.user.first_name}, here's a friendly reminder that you signed up for {chore_description} at {chore_event_ts_human}. Don't forget!"
 
     def get_subject_for_email(self):
-        return f'Volunteering reminder'
+        return "Volunteering reminder"
 
 
 # -- Problems (used to compose notifications) ----
@@ -306,7 +323,7 @@ class ProblemMachineLeftOnByUser(object):
         self.machine_name = machine_name
 
     def get_text(self):
-        return f'You left the {self.machine_name} turned on (press the RED button!)'
+        return f"You left the {self.machine_name} turned on (press the RED button!)"
 
 
 class ProblemMachineLeftOnBySomeoneElse(object):
@@ -314,12 +331,12 @@ class ProblemMachineLeftOnBySomeoneElse(object):
         self.machine_name = machine_name
 
     def get_text(self):
-        return f'Someone left the {self.machine_name} turned on (please, press the RED button)'
+        return f"Someone left the {self.machine_name} turned on (please, press the RED button)"
 
 
 class ProblemSpaceLeftOpen(object):
     def get_text(self):
-        return f'The big switch (left of the door) was left on the OPEN position'
+        return "The big switch (left of the door) was left on the OPEN position"
 
 
 class ProblemLightLeftOn(object):
@@ -327,4 +344,4 @@ class ProblemLightLeftOn(object):
         self.light = light
 
     def get_text(self):
-        return f'The {self.light.name} lights were left on'
+        return f"The {self.light.name} lights were left on"

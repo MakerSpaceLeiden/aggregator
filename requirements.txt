@@ -1,21 +1,24 @@
-paho-mqtt
-quart
-mysql-connector
-redis
-python-daemon
 
 # Cronjob support
 aiocron
+
+# Development tools
+coverage
 croniter
-
-# Human-readable time deltas
-humanize==3.5.0
-
-# Telegram BOT
-python-telegram-bot
 
 # Signal BOT
 dbussy
 
-# Development tools
-coverage
+# Signal BOT
+dbussy
+
+# Human-readable time deltas
+humanize==3.5.0
+mysql-connector
+paho-mqtt
+python-daemon
+
+# Telegram BOT
+python-telegram-bot
+quart
+redis
