@@ -9,7 +9,7 @@ aiocron
 croniter
 
 # Human-readable time deltas
-humanize
+humanize==3.5.0
 
 # Telegram BOT
 python-telegram-bot

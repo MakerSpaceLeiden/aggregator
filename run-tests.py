@@ -1,16 +1,27 @@
 #!/usr/bin/env python
-import os
 import sys
+import unittest
 
+from pathlib import Path
 
-if __name__ == '__main__':
-    src_dirpath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'src')
-    sys.path.append(src_dirpath)
-    import unittest
+def main():
+    """Set up environment and use unit tests built-in discovery."""
+    src_dir = Path(__file__).parent / 'src'
+    sys.path.insert(0, str(src_dir))
+
     from aggregator.clock import set_local_timezone_to_utc
     set_local_timezone_to_utc()
-    test_loader = unittest.defaultTestLoader
-    test_runner = unittest.TextTestRunner()
-    package_directories = [os.path.join(src_dirpath, 'aggregator')]
-    test_suites = [test_loader.discover(pkg_dir, pattern='*_tests.py', top_level_dir=src_dirpath) for pkg_dir in package_directories]
-    test_runner.run(unittest.TestSuite(test_suites))
+
+    # Use unittest
+    sys.argv = [
+        'unittest', 'discover',
+        '-s', str(src_dir),
+        '-p', '*_tests.py',
+        '-t', str(src_dir),
+        '-v'
+    ]
+
+    unittest.main(module=None)
+
+if __name__ == '__main__':
+    main()
