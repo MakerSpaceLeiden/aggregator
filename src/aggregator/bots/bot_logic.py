@@ -1,8 +1,24 @@
-from aggregator.messages import MessageHelp, MessageNotRegistered, MessageWho, MessageUnknown, \
-    MessageUserNotInSpace, MessageConfirmCheckout, MessageConfirmedCheckout, MessageCancelAction, \
-    MessageConfirmedVolunteering, MessageVolunteeringNotNecessary, \
-    BASIC_COMMANDS, COMMAND_WHO, COMMAND_HELP, COMMAND_OUT, COMMAND_YES, COMMAND_NO, COMMAND_CHECKIN, \
-    STATE_CONFIRM_CHECKOUT, STATE_CONFIRM_VOLUNTEERING
+from aggregator.messages import (
+    BASIC_COMMANDS,
+    COMMAND_CHECKIN,
+    COMMAND_HELP,
+    COMMAND_NO,
+    COMMAND_OUT,
+    COMMAND_WHO,
+    COMMAND_YES,
+    STATE_CONFIRM_CHECKOUT,
+    STATE_CONFIRM_VOLUNTEERING,
+    MessageCancelAction,
+    MessageConfirmCheckout,
+    MessageConfirmedCheckout,
+    MessageConfirmedVolunteering,
+    MessageHelp,
+    MessageNotRegistered,
+    MessageUnknown,
+    MessageUserNotInSpace,
+    MessageVolunteeringNotNecessary,
+    MessageWho,
+)
 
 
 class BotLogic(object):
@@ -53,9 +69,15 @@ class BotLogic(object):
 
         elif state == STATE_CONFIRM_VOLUNTEERING:
             if normalized_message == COMMAND_YES.text:
-                registered = self.aggregator.user_volunteers_for_event(chat_metadata['user_id'], chat_metadata['event'], logger)
+                registered = self.aggregator.user_volunteers_for_event(
+                    chat_metadata["user_id"], chat_metadata["event"], logger
+                )
                 self.chat_states.clear(chat_id)
-                return MessageConfirmedVolunteering() if registered else MessageVolunteeringNotNecessary()
+                return (
+                    MessageConfirmedVolunteering()
+                    if registered
+                    else MessageVolunteeringNotNecessary()
+                )
             elif normalized_message == COMMAND_NO.text:
                 self.chat_states.clear(chat_id)
                 return MessageCancelAction()
@@ -68,7 +90,9 @@ class BotLogic(object):
             return MessageUnknown(user)
 
     def _handle_checkout(self, chat_id, user, logger):
-        is_in_space, ts_checkin = self.aggregator.is_user_id_in_space(user.user_id, logger)
+        is_in_space, ts_checkin = self.aggregator.is_user_id_in_space(
+            user.user_id, logger
+        )
         if not is_in_space:
             return MessageUserNotInSpace(user)
         else:
@@ -97,7 +121,7 @@ class ChatStates(object):
     def set(self, chat_id, state, expiration_in_min=None, metadata=None):
         expiration_ts = None
         if expiration_in_min:
-            expiration_ts = self.clock.now().add(expiration_in_min, 'minutes')
+            expiration_ts = self.clock.now().add(expiration_in_min, "minutes")
         self.states[chat_id] = (state, expiration_ts, metadata)
 
     def clear(self, chat_id):

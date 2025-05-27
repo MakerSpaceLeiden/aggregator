@@ -1,34 +1,33 @@
 import unittest
 from collections import defaultdict
 
-from .logic import Aggregator
-from .redis import RedisAdapter
 from .clock import MockClock
 from .logging import configure_logging_for_tests
-from .model import User, Machine, Chore
+from .logic import Aggregator
+from .model import Chore, Machine, User
+from .redis import RedisAdapter
 from .timed_tasks import TaskScheduler
 
-
 STEFANO = User(
-    user_id = 1,
-    first_name = 'Stefano',
-    last_name = 'Masini',
-    email = 'stefano@stefanomasini.com',
-    telegram_user_id = '1234',
-    phone_number = '+316123456',
-    uses_signal = True,
-    always_uses_email = True,
+    user_id=1,
+    first_name="Stefano",
+    last_name="Masini",
+    email="stefano@stefanomasini.com",
+    telegram_user_id="1234",
+    phone_number="+316123456",
+    uses_signal=True,
+    always_uses_email=True,
 )
 
 BOB = User(
-    user_id = 2,
-    first_name = 'Bob',
-    last_name = 'de Bouwer',
-    email = 'bob@bouwer.com',
-    telegram_user_id = '2345',
-    phone_number = '+316456789',
-    uses_signal = True,
-    always_uses_email = True,
+    user_id=2,
+    first_name="Bob",
+    last_name="de Bouwer",
+    email="bob@bouwer.com",
+    telegram_user_id="2345",
+    phone_number="+316456789",
+    uses_signal=True,
+    always_uses_email=True,
 )
 
 ALL_USERS = [
@@ -36,58 +35,73 @@ ALL_USERS = [
     BOB,
 ]
 
-TABLE_SAW = Machine(1, 'Tablesaw', 'Table saw', 'tablesaw', 'tablesaw', 'Wood workshop')
+TABLE_SAW = Machine(1, "Tablesaw", "Table saw", "tablesaw", "tablesaw", "Wood workshop")
 
 ALL_MACHINES = [
     TABLE_SAW,
 ]
 
 
-EMPTY_TRASH = Chore(1, 'Empty trash', 'Empty trash every 2 weeks', 'BasicChore', {
-    'min_required_people': 2,
-    'events_generation': {
-        'event_type': 'recurrent',
-        'starting_time': '26/2/2019 7:00',
-        'crontab': '30 7 * * tue',  # Every Tuesday at 7:30
-        'take_one_every': 2,  # Every other 2 events, i.e. every other Tuesday at 7:30
+EMPTY_TRASH = Chore(
+    1,
+    "Empty trash",
+    "Empty trash every 2 weeks",
+    "BasicChore",
+    {
+        "min_required_people": 2,
+        "events_generation": {
+            "event_type": "recurrent",
+            "starting_time": "26/2/2019 7:00",
+            "crontab": "30 7 * * tue",  # Every Tuesday at 7:30
+            "take_one_every": 2,  # Every other 2 events, i.e. every other Tuesday at 7:30
+        },
+        "reminders": [
+            {
+                "reminder_type": "missing_volunteers",
+                "when": {
+                    "days_before": 3,
+                    "time": "17:00",
+                },
+                "nudges": [
+                    {
+                        "nudge_type": "email",
+                        "nudge_key": "gentle_email_reminder",
+                        "destination": "deelnemers@mailing.list",
+                        "subject_template": "Volunteers needed for {event_day}, {chore_description}",
+                        "body_template": "Hello, we need {num_volunteers_needed} volunteers for {event_day}, {chore_description}. Click here {signup_url}",
+                    }
+                ],
+            },
+            {
+                "reminder_type": "missing_volunteers",
+                "when": {
+                    "days_before": 2,
+                    "time": "17:00",
+                },
+                "nudges": [
+                    {
+                        "nudge_type": "email",
+                        "nudge_key": "hard_email_reminder",
+                        "destination": "deelnemers@mailing.list",
+                        "subject_template": "Volunteers WANTED for {event_day}, {chore_description}",
+                        "body_template": "Hello, we need {num_volunteers_needed} volunteers for {event_day}, {chore_description}. Click here {signup_url}",
+                    },
+                    {
+                        "nudge_type": "volunteer_via_chat_bot",
+                        "nudge_key": "volunteer_via_chat_bot",
+                    },
+                ],
+            },
+            {
+                "reminder_type": "volunteers_who_signed_up",
+                "when": {
+                    "days_before": 1,
+                    "time": "19:00",
+                },
+            },
+        ],
     },
-    'reminders': [{
-        'reminder_type': 'missing_volunteers',
-        'when': {
-            'days_before': 3,
-            'time': '17:00',
-        },
-        'nudges': [{
-            'nudge_type': 'email',
-            'nudge_key': 'gentle_email_reminder',
-            'destination': 'deelnemers@mailing.list',
-            'subject_template': 'Volunteers needed for {event_day}, {chore_description}',
-            'body_template': 'Hello, we need {num_volunteers_needed} volunteers for {event_day}, {chore_description}. Click here {signup_url}',
-        }],
-    }, {
-        'reminder_type': 'missing_volunteers',
-        'when': {
-            'days_before': 2,
-            'time': '17:00',
-        },
-        'nudges': [{
-            'nudge_type': 'email',
-            'nudge_key': 'hard_email_reminder',
-            'destination': 'deelnemers@mailing.list',
-            'subject_template': 'Volunteers WANTED for {event_day}, {chore_description}',
-            'body_template': 'Hello, we need {num_volunteers_needed} volunteers for {event_day}, {chore_description}. Click here {signup_url}',
-        }, {
-            'nudge_type': 'volunteer_via_chat_bot',
-            'nudge_key': 'volunteer_via_chat_bot',
-        }],
-    }, {
-        'reminder_type': 'volunteers_who_signed_up',
-        'when': {
-            'days_before': 1,
-            'time': '19:00',
-        },
-    }],
-})
+)
 
 # import json
 # print(json.dumps(EMPTY_TRASH.configuration, indent=2))
@@ -128,7 +142,19 @@ class AggregatorBaseTestSuite(unittest.TestCase):
         self.logger = configure_logging_for_tests()
         self.clock = MockClock()
         http_server_input_message_queue = MockeHttpServerInputMessageQueue()
-        self.redis_adapter = RedisAdapter(self.clock, 2, '127.0.0.1', 6379, 0, 'msl_aggregator_tests', 60, 90, 60, 60, 7)
+        self.redis_adapter = RedisAdapter(
+            self.clock,
+            2,
+            "127.0.0.1",
+            6379,
+            0,
+            "msl_aggregator_tests",
+            60,
+            90,
+            60,
+            60,
+            7,
+        )
         self._delete_all_redis_keys()
         self.task_scheduler = TaskScheduler(self.clock, self.logger)
         self.db = MockDatabaseAdapter(self)
@@ -154,26 +180,26 @@ class AggregatorBaseTestSuite(unittest.TestCase):
         self._delete_all_redis_keys()
 
     def _delete_all_redis_keys(self):
-        keys = self.redis_adapter.redis.keys(self.redis_adapter.key_prefix + ':*')
+        keys = self.redis_adapter.redis.keys(self.redis_adapter.key_prefix + ":*")
         for key in keys:
             self.redis_adapter.redis.delete(key)
 
     def get_chore_volunteers_for_event(self, event):
-        key = '{chore_id}-{ts}'.format(**event.get_object_key())
+        key = "{chore_id}-{ts}".format(**event.get_object_key())
         return self.volunteers[key]
 
     def add_chore_volunteer_for_event(self, event, user):
-        key = '{chore_id}-{ts}'.format(**event.get_object_key())
+        key = "{chore_id}-{ts}".format(**event.get_object_key())
         return self.volunteers[key].append(user)
 
     def send_notification(self, user, notification, logger):
-        self.assertNotEqual(notification.get_text(), '')
-        self.assertNotEqual(notification.get_markdown(), '')
-        self.assertNotEqual(notification.get_email_text(), '')
-        self.assertNotEqual(notification.get_subject_for_email(), '')
-        self.bot_messages.append( (user.user_id, notification.__class__.__name__) )
+        self.assertNotEqual(notification.get_text(), "")
+        self.assertNotEqual(notification.get_markdown(), "")
+        self.assertNotEqual(notification.get_email_text(), "")
+        self.assertNotEqual(notification.get_subject_for_email(), "")
+        self.bot_messages.append((user.user_id, notification.__class__.__name__))
         self.bot_notification_objects.append(notification)
-        chat_id = f'signal-{user.phone_number}'
+        chat_id = f"signal-{user.phone_number}"
         return chat_id
 
     def send_email_to_user(self, user, message, logger):
@@ -183,9 +209,10 @@ class AggregatorBaseTestSuite(unittest.TestCase):
         self.emails_sent.append((name, email, message.__class__.__name__))
 
     def send_bot_message(self, user, message):
-        reply = self.aggregator.handle_bot_message(f'signal-{user.phone_number}', user, message, self.logger)
+        reply = self.aggregator.handle_bot_message(
+            f"signal-{user.phone_number}", user, message, self.logger
+        )
         if not reply:
-            raise Exception('Missing reply from BOT logic')
+            raise Exception("Missing reply from BOT logic")
         else:
             self.send_notification(user, reply, self.logger)
-
