@@ -23,12 +23,15 @@ jobs:
         with:
           branch: ${{ github.head_ref }}
   tests:
+    strategy:
+      matrix:
+        version: [3.7]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.7"
+          python-version: ${{ matrix.version }}
       - name: Install redis
         run: sudo apt-get install -y redis-tools redis-server
       - name: Verify that redis is up
