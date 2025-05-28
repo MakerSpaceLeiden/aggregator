@@ -1,0 +1,6 @@
+[project]
+name = "aggregator"
+[tool.pytest.ini_options]
+python_files = [
+  "*_tests.py"
+]
