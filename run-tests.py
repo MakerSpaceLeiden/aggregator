@@ -47,24 +47,12 @@ def run_tests_with_coverage(src_dir, env, args):
     """Run tests with coverage analysis using coverage run."""
     print("Running tests with coverage analysis...")
 
-    # Run tests with coverage
+    # Build pytest command with coverage
     cmd = [
-        "coverage",
-        "run",
-        "--source",
+        "pytest",
         str(src_dir),
-        "--omit",
-        f"{src_dir}/*/tests/*,{src_dir}/*/*_tests.py,{src_dir}/*/test_*.py",
-        "-m",
-        "unittest",
-        "discover",
-        "-s",
-        str(src_dir),
-        "-p",
-        "*_tests.py",
-        "-t",
-        str(src_dir),
-        "-v",
+        "--cov=" + str(src_dir),
+        f"--ignore={src_dir}/*/tests/",  # Ignore test directories from coverage
     ]
 
     result = subprocess.run(cmd, env=env)
@@ -84,15 +72,7 @@ def run_tests_with_coverage(src_dir, env, args):
 def run_tests_without_coverage(src_dir, env):
     """Run tests without coverage analysis."""
     cmd = [
-        "python",
-        "-m",
-        "unittest",
-        "discover",
-        "-s",
-        str(src_dir),
-        "-p",
-        "*_tests.py",
-        "-t",
+        "pytest",
         str(src_dir),
         "-v",
     ]
