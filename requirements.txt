@@ -1,24 +1,21 @@
 
 # Cronjob support
-aiocron
+aiocron==1.6
 
 # Development tools
 coverage
-croniter
+croniter==1.0.13
 
 # Signal BOT
-dbussy
-
-# Signal BOT
-dbussy
+dbussy==1.3
 
 # Human-readable time deltas
 humanize==3.5.0
-mysql-connector
-paho-mqtt
-python-daemon
+mysql-connector==2.2.9
+paho-mqtt==1.5.1
+python-daemon==2.3.0
 
 # Telegram BOT
-python-telegram-bot
-quart
-redis
+python-telegram-bot==13.5
+quart==0.15.1
+redis==3.5.3
