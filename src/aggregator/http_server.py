@@ -5,26 +5,11 @@ from functools import partial, wraps
 
 def create_app(
     logger,
-    logging_handler,
     aggregator,
     worker_input_queue,
     input_message_queue,
     basic_auth,
 ):
-    # Configure Quart's internal logging
-    quart_app_logger = logging.getLogger("quart.app")
-    quart_app_logger.setLevel(logging.DEBUG)
-    quart_app_logger.addHandler(logging_handler)
-
-    quart_serving_logger = logging.getLogger("quart.serving")
-    quart_serving_logger.setLevel(logging.DEBUG)
-    quart_serving_logger.addHandler(logging_handler)
-
-    import quart.logging
-
-    quart.logging.serving_handler = logging_handler
-    quart.logging.default_handler = logging_handler
-
     import asyncio
 
     from quart import Quart, Response, jsonify, request, websocket
@@ -190,11 +175,24 @@ def run_http_server(
 ):
     logger = logger.getLogger(subsystem="http")
 
+    # Configure Quart's internal logging
+    quart_app_logger = logging.getLogger("quart.app")
+    quart_app_logger.setLevel(logging.DEBUG)
+    quart_app_logger.addHandler(logging_handler)
+
+    quart_serving_logger = logging.getLogger("quart.serving")
+    quart_serving_logger.setLevel(logging.DEBUG)
+    quart_serving_logger.addHandler(logging_handler)
+
+    import quart.logging
+
+    quart.logging.serving_handler = logging_handler
+    quart.logging.default_handler = logging_handler
+
     # ------------------------------------
 
     app = create_app(
         logger,
-        logging_handler,
         aggregator,
         worker_input_queue,
         input_message_queue,
