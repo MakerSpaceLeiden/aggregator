@@ -3,16 +3,13 @@ import logging
 from functools import partial, wraps
 
 
-def run_http_server(
-    loop,
-    input_message_queue,
-    aggregator,
-    worker_input_queue,
+def create_app(
     logger,
     logging_handler,
+    aggregator,
+    worker_input_queue,
+    input_message_queue,
     basic_auth,
-    host,
-    port,
 ):
     # Configure Quart's internal logging
     quart_app_logger = logging.getLogger("quart.app")
@@ -28,11 +25,11 @@ def run_http_server(
     quart.logging.serving_handler = logging_handler
     quart.logging.default_handler = logging_handler
 
-    logger = logger.getLogger(subsystem="http")
-
     import asyncio
 
     from quart import Quart, Response, jsonify, request, websocket
+
+    app = Quart("aggregator")
 
     def with_basic_auth(f):
         @wraps(f)
@@ -57,10 +54,6 @@ def run_http_server(
                 logger.exception("Unexpected exception")
 
         return decorated
-
-    # ------------------------------------
-
-    app = Quart("aggregator")
 
     @app.before_request
     def prepare_request():
@@ -181,6 +174,32 @@ def run_http_server(
         consumer = asyncio.create_task(ws_receiving())
         await asyncio.gather(producer, consumer)
 
+    return app
+
+
+def run_http_server(
+    loop,
+    input_message_queue,
+    aggregator,
+    worker_input_queue,
+    logger,
+    logging_handler,
+    basic_auth,
+    host,
+    port,
+):
+    logger = logger.getLogger(subsystem="http")
+
+    # ------------------------------------
+
+    app = create_app(
+        logger,
+        logging_handler,
+        aggregator,
+        worker_input_queue,
+        input_message_queue,
+        basic_auth,
+    )
     # -- Run server ----
 
     logger.info(f"HTTP+WS Server listening on {host}:{port}")
