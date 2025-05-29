@@ -68,7 +68,7 @@ class TestAggregatorIntegration:
             },
         }
 
-    def test_aggregator_main_function_accepts_config(self, test_config):
+    def test_aggregator_main_function_accepts_config(self, test_config, redisdb):
         """Test that the main aggregator function accepts and processes configuration."""
 
         # Add the src directory to Python path
