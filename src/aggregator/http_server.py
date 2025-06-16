@@ -36,7 +36,7 @@ def run_http_server(
 
     def with_basic_auth(f):
         @wraps(f)
-        def decorated(*args, **kwargs):
+        async def decorated(*args, **kwargs):
             try:
                 if not request.authorization or not (
                     request.authorization.username == basic_auth["username"]
@@ -52,9 +52,10 @@ def run_http_server(
                         401,
                         {"WWW-Authenticate": f'Basic realm="{realm}"'},
                     )
-                return f(*args, **kwargs)
+                return await f(*args, **kwargs)
             except Exception:
                 logger.exception("Unexpected exception")
+                return Response("Internal server error", 500, mimetype="text/plain")
 
         return decorated
 
@@ -93,10 +94,20 @@ def run_http_server(
     @app.route("/space_state", methods=["GET"])
     @with_basic_auth
     async def space_state():
-        state = await worker_input_queue.add_task_with_result_future(
-            aggregator.get_space_state_for_json, request.logger
-        )
-        return jsonify(state)
+        logger.info("space_state endpoint called")
+        try:
+            logger.info("About to call worker_input_queue.add_task_with_result_future")
+            state = await worker_input_queue.add_task_with_result_future(
+                aggregator.get_space_state_for_json, request.logger
+            )
+            logger.info(f"Worker queue returned: {type(state)}")
+            logger.info("About to call jsonify")
+            response = jsonify(state)
+            logger.info(f"jsonify returned: {type(response)}")
+            return response
+        except Exception as e:
+            logger.exception(f"Error in space_state endpoint: {e}")
+            raise
 
     @app.route("/telegram/token", methods=["POST"])
     @with_basic_auth
