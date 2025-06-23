@@ -310,7 +310,8 @@ class RedisAdapter(object):
         logger.info(f"Checking nudge has been processed: {nudge_key}")
         self.redis.setex(
             self._k_nudge(nudge_key),
-            self.chores_warnings_check_window_in_hours * 2 * 3600,
+            # The time to live of the logged record of the nudge in redis set to 10 days (2 x 120 x 3600 seconds). 
+            self.chores_warnings_check_window_in_hours * 120 * 3600,
             "processed",
         )
 
