@@ -1,0 +1,14 @@
+[Unit]
+Description=Makerspace Leiden Aggregator
+After=network.target redis.service signal.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=2
+User=aggregator
+EnvironmentFile=/usr/local/aggregator/.env
+ExecStart=/usr/local/aggregator/venv/bin/python /usr/local/aggregator/server-prod.py
+
+[Install]
+WantedBy=multi-user.target
