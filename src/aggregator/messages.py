@@ -255,36 +255,6 @@ class ProblemsLeavingSpaceNotification(BaseBotMessage):
         return "Forgotten when leaving the space"
 
 
-class AskForVolunteeringNotification(BaseBotMessage):
-    next_commands = YES_NO_COMMANDS
-
-    def __init__(self, user, event, urls):
-        self.user = user
-        self.event = event
-        self.urls = urls
-
-    def get_text(self):
-        chore_description = self.event.chore.description
-        chore_event_ts_human = self.event.ts.strftime("%a %d/%m/%Y %H:%M")
-        return f"Hello {self.user.first_name}, your faithful Chat BOT here. We need help for {chore_description} at {chore_event_ts_human}. Would you like to volunteer?"
-
-    def get_email_text(self):
-        chore_description = self.event.chore.description
-        chore_event_ts_human = self.event.ts.strftime("%a %d/%m/%Y %H:%M")
-        return f"Hello {self.user.first_name}, your faithful Chat BOT here.\n\nWe need help for {chore_description} at {chore_event_ts_human}.\n\nWould you like to volunteer?\n\nIf so, please sign up in: {self.urls.chores()}"
-
-    def get_subject_for_email(self):
-        return "Volunteer needed"
-
-    def set_chat_state(self, chat_id, bot_logic):
-        bot_logic.chat_states.set(
-            chat_id,
-            STATE_CONFIRM_VOLUNTEERING,
-            expiration_in_min=30,  # Half hour
-            metadata={"user_id": self.user.user_id, "event": self.event},
-        )
-
-
 class MessageConfirmedVolunteering(BaseBotMessage):
     def get_text(self):
         return "Volunteering confirmed!"
@@ -299,20 +269,6 @@ class MessageVolunteeringNotNecessary(BaseBotMessage):
 
     def get_subject_for_email(self):
         return "Volunteering not necessary anymore"
-
-
-class VolunteeringReminderNotification(BaseBotMessage):
-    def __init__(self, user, event):
-        self.user = user
-        self.event = event
-
-    def get_text(self):
-        chore_description = self.event.chore.description
-        chore_event_ts_human = self.event.ts.strftime("%a %d/%m/%Y %H:%M")
-        return f"{self.user.first_name}, here's a friendly reminder that you signed up for {chore_description} at {chore_event_ts_human}. Don't forget!"
-
-    def get_subject_for_email(self):
-        return "Volunteering reminder"
 
 
 # -- Problems (used to compose notifications) ----

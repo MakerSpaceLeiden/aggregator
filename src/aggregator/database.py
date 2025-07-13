@@ -1,9 +1,8 @@
-import json
 from contextlib import contextmanager
 
 import mysql.connector
 
-from aggregator.model import Chore, Machine, Tag, User
+from aggregator.model import Machine, Tag, User
 
 
 class MySQLAdapter(object):
@@ -25,19 +24,6 @@ class MySQLAdapter(object):
                 "SELECT id, first_name, last_name, email, telegram_user_id, phone_number, uses_signal, always_uses_email FROM members_user"
             )
         return [User(*row) for row in mycursor]
-
-    def get_all_chores(self, logger):
-        logger = logger.getLogger(subsystem="mysql")
-        logger.info("Reading all chores")
-        with self._connection() as db:
-            mycursor = db.cursor()
-            mycursor.execute(
-                "SELECT id, name, description, class_type, configuration FROM chores_chore"
-            )
-        rows = [list(row) for row in mycursor]
-        for row in rows:
-            row[-1] = json.loads(row[-1])
-        return [Chore(*row) for row in rows]
 
     def get_all_machines(self, logger):
         logger = logger.getLogger(subsystem="mysql")
@@ -93,37 +79,5 @@ class MySQLAdapter(object):
                 UPDATE members_user SET telegram_user_id = NULL WHERE id = %s
             """,
                 (user_id,),
-            )
-            db.commit()
-
-    def get_chore_volunteers_for_event(self, event, logger):
-        logger = logger.getLogger(subsystem="mysql")
-        logger.info(
-            f"Reading Chore volunteers for event {event.chore.name}-{event.ts.as_int_timestamp()}"
-        )
-        with self._connection() as db:
-            mycursor = db.cursor()
-            mycursor.execute(
-                """
-                SELECT members_user.id, members_user.first_name, members_user.last_name, members_user.email, members_user.telegram_user_id, members_user.phone_number, members_user.uses_signal, members_user.always_uses_email
-                FROM chores_chorevolunteer LEFT JOIN members_user ON (user_id = members_user.id)
-                WHERE chore_id = %s AND timestamp = %s
-            """,
-                (event.chore.chore_id, event.ts.as_int_timestamp()),
-            )
-        return [User(*row) for row in mycursor]
-
-    def add_chore_volunteer_for_event(self, event, user, logger):
-        logger = logger.getLogger(subsystem="mysql")
-        logger.info(
-            f"Adding user ID {user.user_id} as volunteer for chore {event.chore.name}-{event.ts.as_int_timestamp()}"
-        )
-        with self._connection() as db:
-            mycursor = db.cursor()
-            mycursor.execute(
-                """
-                INSERT INTO chores_chorevolunteer(timestamp, user_id, chore_id, created_at) VALUES (%s, %s, %s, NOW())
-            """,
-                (event.ts.as_int_timestamp(), user.user_id, event.chore.chore_id),
             )
             db.commit()

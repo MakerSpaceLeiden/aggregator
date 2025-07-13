@@ -13,7 +13,6 @@ class RedisAdapter(object):
     def __init__(
         self,
         clock,
-        chores_warnings_check_window_in_hours,
         host,
         port,
         db,
@@ -25,9 +24,6 @@ class RedisAdapter(object):
         history_lines_expiration_in_days,
     ):
         self.clock = clock
-        self.chores_warnings_check_window_in_hours = (
-            chores_warnings_check_window_in_hours
-        )
         self.redis = redis.Redis(host=host, port=port, db=db)
         self.key_prefix = key_prefix
         self.users_expiration_time_in_sec = users_expiration_time_in_sec
@@ -297,23 +293,6 @@ class RedisAdapter(object):
         if len(ids_to_remove) > 0:
             self.redis.srem(self._k_history_lines(), *ids_to_remove)
         return result
-
-    def nudge_has_been_processed(self, nudge, logger):
-        logger = logger.getLogger(subsystem="redis")
-        nudge_key = nudge.get_string_key()
-        logger.info(f"Checking nudge has been processed: {nudge_key}")
-        return self.redis.exists(self._k_nudge(nudge_key))
-
-    def store_nudge_marker(self, nudge, logger):
-        logger = logger.getLogger(subsystem="redis")
-        nudge_key = nudge.get_string_key()
-        logger.info(f"Checking nudge has been processed: {nudge_key}")
-        self.redis.setex(
-            self._k_nudge(nudge_key),
-            # The time to live of the logged record of the nudge in redis set to 10 days (2 x 120 x 3600 seconds).
-            self.chores_warnings_check_window_in_hours * 120 * 3600,
-            "processed",
-        )
 
     # -- Keys ----
 

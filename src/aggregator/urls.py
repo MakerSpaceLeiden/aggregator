@@ -4,6 +4,3 @@ class Urls(object):
 
     def space_state(self):
         return "https://mijn.makerspaceleiden.nl/space_state"
-
-    def chores(self):
-        return "https://mijn.makerspaceleiden.nl/chores/"

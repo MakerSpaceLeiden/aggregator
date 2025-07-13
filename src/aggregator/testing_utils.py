@@ -4,7 +4,7 @@ from collections import defaultdict
 from .clock import MockClock
 from .logging import configure_logging_for_tests
 from .logic import Aggregator
-from .model import Chore, Machine, User
+from .model import Machine, User
 from .redis import RedisAdapter
 from .timed_tasks import TaskScheduler
 
@@ -42,75 +42,6 @@ ALL_MACHINES = [
 ]
 
 
-EMPTY_TRASH = Chore(
-    1,
-    "Empty trash",
-    "Empty trash every 2 weeks",
-    "BasicChore",
-    {
-        "min_required_people": 2,
-        "events_generation": {
-            "event_type": "recurrent",
-            "starting_time": "26/2/2019 7:00",
-            "crontab": "30 7 * * tue",  # Every Tuesday at 7:30
-            "take_one_every": 2,  # Every other 2 events, i.e. every other Tuesday at 7:30
-        },
-        "reminders": [
-            {
-                "reminder_type": "missing_volunteers",
-                "when": {
-                    "days_before": 3,
-                    "time": "17:00",
-                },
-                "nudges": [
-                    {
-                        "nudge_type": "email",
-                        "nudge_key": "gentle_email_reminder",
-                        "destination": "deelnemers@mailing.list",
-                        "subject_template": "Volunteers needed for {event_day}, {chore_description}",
-                        "body_template": "Hello, we need {num_volunteers_needed} volunteers for {event_day}, {chore_description}. Click here {signup_url}",
-                    }
-                ],
-            },
-            {
-                "reminder_type": "missing_volunteers",
-                "when": {
-                    "days_before": 2,
-                    "time": "17:00",
-                },
-                "nudges": [
-                    {
-                        "nudge_type": "email",
-                        "nudge_key": "hard_email_reminder",
-                        "destination": "deelnemers@mailing.list",
-                        "subject_template": "Volunteers WANTED for {event_day}, {chore_description}",
-                        "body_template": "Hello, we need {num_volunteers_needed} volunteers for {event_day}, {chore_description}. Click here {signup_url}",
-                    },
-                    {
-                        "nudge_type": "volunteer_via_chat_bot",
-                        "nudge_key": "volunteer_via_chat_bot",
-                    },
-                ],
-            },
-            {
-                "reminder_type": "volunteers_who_signed_up",
-                "when": {
-                    "days_before": 1,
-                    "time": "19:00",
-                },
-            },
-        ],
-    },
-)
-
-# import json
-# print(json.dumps(EMPTY_TRASH.configuration, indent=2))
-
-ALL_CHORES = [
-    EMPTY_TRASH,
-]
-
-
 class MockeHttpServerInputMessageQueue(object):
     def send_message(self, **kwargs):
         pass
@@ -126,15 +57,6 @@ class MockDatabaseAdapter(object):
     def get_all_machines(self, logger):
         return ALL_MACHINES
 
-    def get_all_chores(self, logger):
-        return ALL_CHORES
-
-    def get_chore_volunteers_for_event(self, event, logger):
-        return self.test_suite.get_chore_volunteers_for_event(event)
-
-    def add_chore_volunteer_for_event(self, event, user, logger):
-        self.test_suite.add_chore_volunteer_for_event(event, user)
-
 
 class AggregatorBaseTestSuite(unittest.TestCase):
     def setUp(self):
@@ -144,7 +66,6 @@ class AggregatorBaseTestSuite(unittest.TestCase):
         http_server_input_message_queue = MockeHttpServerInputMessageQueue()
         self.redis_adapter = RedisAdapter(
             self.clock,
-            2,
             "127.0.0.1",
             6379,
             0,
@@ -166,9 +87,6 @@ class AggregatorBaseTestSuite(unittest.TestCase):
             self,
             self.task_scheduler,
             5,
-            90,
-            2,
-            14,
         )
         self.aggregator.signal_bot = self
         self.bot_messages = []
@@ -183,14 +101,6 @@ class AggregatorBaseTestSuite(unittest.TestCase):
         keys = self.redis_adapter.redis.keys(self.redis_adapter.key_prefix + ":*")
         for key in keys:
             self.redis_adapter.redis.delete(key)
-
-    def get_chore_volunteers_for_event(self, event):
-        key = "{chore_id}-{ts}".format(**event.get_object_key())
-        return self.volunteers[key]
-
-    def add_chore_volunteer_for_event(self, event, user):
-        key = "{chore_id}-{ts}".format(**event.get_object_key())
-        return self.volunteers[key].append(user)
 
     def send_notification(self, user, notification, logger):
         self.assertNotEqual(notification.get_text(), "")

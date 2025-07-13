@@ -5,7 +5,6 @@ from collections import defaultdict
 from functools import partial
 
 from .bots.bot_logic import BotLogic
-from .chores.chores_logic import ChoresLogic, NudgesParams
 from .messages import (
     BASIC_COMMANDS,
     MachineLeftOnNotification,
@@ -37,22 +36,12 @@ class Aggregator(object):
         email_adapter,
         task_scheduler,
         checkin_stale_after_hours,
-        chores_timeframe_in_days,
-        chores_warnings_check_window_in_hours,
-        chores_message_users_seen_no_later_than_days,
     ):
         self.database_adapter = database_adapter
         self.redis_adapter = redis_adapter
         self.notifications_queue = notifications_queue
         self.clock = clock
         self.checkin_stale_after_hours = checkin_stale_after_hours
-        self.chores_timeframe_in_days = chores_timeframe_in_days
-        self.chores_warnings_check_window_in_hours = (
-            chores_warnings_check_window_in_hours
-        )
-        self.chores_message_users_seen_no_later_than_days = (
-            chores_message_users_seen_no_later_than_days
-        )
         self.email_adapter = email_adapter
         self.task_scheduler = task_scheduler
         self.bot_logic = BotLogic(self)
@@ -462,30 +451,6 @@ class Aggregator(object):
                 user, MachineLeftOnNotification(machine), logger
             )
 
-    def _get_chores_logic(self, logger):
-        try:
-            logger.info("ok 1")
-            return ChoresLogic(self.database_adapter.get_all_chores(logger))
-            logger.info("ok 2")
-        except Exception as e:
-            logger.exception("Unexpected exception {}".format(e))
-
-    def get_chores_for_json(self, logger):
-        try:
-            logger.info("ok 3")
-            chores_logic = self._get_chores_logic(logger)
-            now = self.clock.now()
-            events = chores_logic.get_events_from_to(
-                now, now.add(self.chores_timeframe_in_days, "days")
-            )
-        except Exception as e:
-            logger.exception("Unexpected exception {}".format(e))
-
-        logger.info(events)
-        return {
-            "events": [event.for_json() for event in events],
-        }
-
     def get_users_seen_no_later_than_days(self, num_days, logger):
         ts_and_users = self.redis_adapter.get_users_last_in_space(logger)
         threshold = self.clock.now().add(-num_days, "days")
@@ -494,36 +459,3 @@ class Aggregator(object):
             for ts, user_id in ts_and_users
             if ts > threshold
         ]
-
-    def send_warnings_for_chores(self, logger):
-        logger = logger.getLogger(subsystem="aggregator")
-        chores_logic = self._get_chores_logic(logger)
-        now = self.clock.now()
-        for event in chores_logic.iter_events_with_reminders_from_to(
-            now.add(-self.chores_warnings_check_window_in_hours, "hours"), now
-        ):
-            volunteers = self.database_adapter.get_chore_volunteers_for_event(
-                event, logger
-            )
-            params = NudgesParams(
-                volunteers,
-                now,
-                self.urls,
-                self.chores_message_users_seen_no_later_than_days,
-            )
-            for nudge in event.iter_nudges(params):
-                logger.info("Processing Chore nudge: {0}".format(nudge))
-                if not self.redis_adapter.nudge_has_been_processed(nudge, logger):
-                    nudge.send(self, logger)
-                    self.redis_adapter.store_nudge_marker(nudge, logger)
-
-    def user_volunteers_for_event(self, user_id, event, logger):
-        user = self._get_user_by_id(user_id, logger)
-        if not user:
-            raise Exception(f"User not found with ID {user_id}")
-        volunteers = self.database_adapter.get_chore_volunteers_for_event(event, logger)
-        if len(volunteers) >= event.chore.min_required_people:
-            # No need for more volunteers
-            return False
-        self.database_adapter.add_chore_volunteer_for_event(event, user, logger)
-        return True
