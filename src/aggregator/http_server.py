@@ -166,14 +166,6 @@ def run_http_server(
         )
         return Response("Ok", mimetype="text/plain")
 
-    @app.route("/chores/overview", methods=["POST", "GET"])
-    # @with_basic_auth
-    async def chores_overview():
-        data = await worker_input_queue.add_task_with_result_future(
-            aggregator.get_chores_for_json, request.logger
-        )
-        return jsonify(data)
-
     # -- Web Socket -----
 
     async def ws_sending():

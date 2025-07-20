@@ -36,7 +36,6 @@ def _main(config):
     from aggregator.redis import RedisAdapter
     from aggregator.timed_tasks import (
         TaskScheduler,
-        start_checking_for_chores,
         start_checking_for_off_machines,
         start_checking_for_stale_checkins,
     )
@@ -83,9 +82,7 @@ def _main(config):
     # Application logic
     aggregator = Aggregator(
         MySQLAdapter(**config["mysql"]),
-        RedisAdapter(
-            clock, config["chores"]["warnings_check_window_in_hours"], **config["redis"]
-        ),
+        RedisAdapter(clock, **config["redis"]),
         http_server_input_message_queue,
         clock,
         email_adapter,
@@ -93,9 +90,6 @@ def _main(config):
         config["check_stale_checkins"]["stale_after_hours"]
         if "check_stale_checkins" in config
         else 0,
-        config["chores"]["timeframe_in_days"],
-        config["chores"]["warnings_check_window_in_hours"],
-        config["chores"]["message_users_seen_no_later_than_days"],
     )
 
     # Start MQTT listener
@@ -144,7 +138,6 @@ def _main(config):
             config["check_stale_checkins"]["crontab"],
             logger,
         )
-    start_checking_for_chores(aggregator, worker_input_queue, logger)
     start_checking_for_off_machines(aggregator, worker_input_queue, logger)
     task_scheduler.start_running_scheduled_tasks(worker_input_queue)
 

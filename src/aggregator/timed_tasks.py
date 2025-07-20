@@ -10,13 +10,6 @@ def start_checking_for_stale_checkins(aggregator, worker_input_queue, crontab, l
         worker_input_queue.add_task(aggregator.clean_stale_user_checkins, logger)
 
 
-def start_checking_for_chores(aggregator, worker_input_queue, logger):
-    @aiocron.crontab("*/5 * * * *")  # Every five minutes
-    @asyncio.coroutine
-    def early_in_the_morning():
-        worker_input_queue.add_task(aggregator.send_warnings_for_chores, logger)
-
-
 def start_checking_for_off_machines(aggregator, worker_input_queue, logger):
     @aiocron.crontab("*/5 * * * *")  # Every five minutes
     @asyncio.coroutine

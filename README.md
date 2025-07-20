@@ -9,7 +9,6 @@ Welcome to the MakerSpace Leiden Aggregator. This software aggregates and distri
   - [Installation](#installation)
   - [Running Locally](#running-locally)
   - [Testing](#testing)
-- [For Developers](#for-developers)
   - [Production Environment](#production-environment)
 
 ## Features
@@ -70,12 +69,6 @@ Run the test suite with:
 ```
 python run-tests.py
 ```
-
-## For Developers
-
-Please refer to the feature documentation in the source directories for detailed information on specific components:
-- [Chores](./src/aggregator/chores/README.md)
-
 
 ### Production Environment
 The server runs in production using systemd.
