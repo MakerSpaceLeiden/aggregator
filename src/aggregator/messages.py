@@ -165,10 +165,8 @@ class StaleCheckoutNotification(BaseBotMessage):
             "like if the lights are still on when the last person leaves.\n\n"
             "Checking out can be done when you leave, by simply swiping your card again, while you hold the door open on your way out.\n"
             f"Or it can also be done via the Space State page: {self.space_state_url}\n"
-            "Or via the Chat BOT (Telegram or Signal). If you would like to use the BOT, you can activate it from your personal data "
             f"page: {self.notification_settings_url}\n\n"
             "The MakerSpace BOT\n\n"
-            "PS. If you would rather receive these communications via the Chat BOT instead of email, you can configure your notification settings at the URL above."
         )
 
     def get_subject_for_email(self):
