@@ -1,13 +1,9 @@
 # This is where the main business logic lives.
 
-import random
 from collections import defaultdict
 
-from .bots.bot_logic import BotLogic
 from .messages import (
-    BASIC_COMMANDS,
     MachineLeftOnNotification,
-    MessageHelp,
     ProblemLightLeftOn,
     ProblemMachineLeftOnBySomeoneElse,
     ProblemMachineLeftOnByUser,
@@ -44,9 +40,6 @@ class Aggregator(object):
         self.checkin_stale_after_hours = checkin_stale_after_hours
         self.email_adapter = email_adapter
         self.task_scheduler = task_scheduler
-        self.bot_logic = BotLogic(self)
-        self.telegram_bot = None
-        self.signal_bot = None
         self.urls = Urls()
 
     def _get_user_by_id(self, user_id, logger):
@@ -80,27 +73,6 @@ class Aggregator(object):
         return machines
 
     # --------------------------------------------------
-
-    def make_new_telegram_association_for_user(
-        self, current_user, connection_token, telegram_id, logger
-    ):
-        if current_user:
-            # Clear current association (if there is one)
-            self.delete_telegram_id_for_user(current_user.user_id, logger)
-        connecting_user = self.register_user_by_telegram_token(
-            connection_token, telegram_id, logger
-        )
-        return connecting_user
-
-    def get_user_by_telegram_id(self, telegram_id, logger):
-        user = self.redis_adapter.get_user_by_telegram_id(telegram_id, logger)
-        if not user:
-            all_users = self.database_adapter.get_all_users(logger)
-            self.redis_adapter.set_users_by_ids(all_users, logger)
-            filtered_users = [u for u in all_users if u.telegram_user_id == telegram_id]
-            if len(filtered_users) == 1:
-                user = filtered_users[0]
-        return user
 
     def get_user_by_phone_number(self, phone_number, logger):
         user = self.redis_adapter.get_user_by_phone_number(phone_number, logger)
@@ -322,28 +294,6 @@ class Aggregator(object):
             self.crm_adapter.user_checkout(user_id, logger)
 
     def send_user_notification(self, user, notification, logger):
-        if self.telegram_bot and user.uses_telegram_bot():
-            chat_id = None
-            try:
-                chat_id = self.telegram_bot.send_notification(
-                    user, notification, logger
-                )
-            except Exception:
-                logger.exception(
-                    "Unexpected exception when trying to notify user via Telegram"
-                )
-            if chat_id:
-                notification.set_chat_state(chat_id, self.bot_logic)
-        if self.signal_bot and user.uses_signal_bot():
-            chat_id = None
-            try:
-                chat_id = self.signal_bot.send_notification(user, notification, logger)
-            except Exception:
-                logger.exception(
-                    "Unexpected exception when trying to notify user via Signal"
-                )
-            if chat_id:
-                notification.set_chat_state(chat_id, self.bot_logic)
         if user.uses_email():
             try:
                 self.email_adapter.send_email_to_user(user, notification, logger)
@@ -391,44 +341,6 @@ class Aggregator(object):
     def lights(self, room, state, logger):
         logger = logger.getLogger(subsystem="aggregator")
         self.redis_adapter.set_lights(room, state, logger)
-
-    def create_telegram_connect_token(self, user_id, logger):
-        logger = logger.getLogger(subsystem="aggregator")
-        token = str(random.randint(10**20, 10**21))
-        self.redis_adapter.set_telegram_token(token, user_id, logger)
-        return token
-
-    def register_user_by_telegram_token(self, token, telegram_user_id, logger):
-        logger = logger.getLogger(subsystem="aggregator")
-        user_id = self.redis_adapter.get_user_id_by_telegram_token(token, logger)
-        if user_id:
-            user = self._get_user_by_id(user_id, logger)
-            logger.info(
-                f"Registering user {user_id} with Telegram User ID {telegram_user_id}"
-            )
-            self.database_adapter.store_telegram_user_id_for_user_id(
-                telegram_user_id, user.user_id, logger
-            )
-            return user
-
-    def delete_telegram_id_for_user(self, user_id, logger):
-        self.database_adapter.delete_telegram_user_id_for_user_id(user_id, logger)
-        all_users = self.database_adapter.get_all_users(logger)
-        self.redis_adapter.set_users_by_ids(all_users, logger)
-
-    def handle_bot_message(self, chat_id, user, message, logger):
-        return self.bot_logic.handle_message(chat_id, user, message, logger)
-
-    def handle_new_bot_conversation(self, chat_id, user, message, logger):
-        return self.bot_logic.handle_new_conversation(chat_id, user, message, logger)
-
-    def onboard_new_signal_user(self, user_id, logger):
-        logger = logger.getLogger(subsystem="aggregator")
-        user = self._get_user_by_id(user_id, logger)
-        if self.signal_bot:
-            self.signal_bot.send_notification(
-                user, MessageHelp(user, BASIC_COMMANDS), logger
-            )
 
     def send_notification_test(self, user_id, logger):
         logger = logger.getLogger(subsystem="aggregator")

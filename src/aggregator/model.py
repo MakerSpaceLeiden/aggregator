@@ -18,22 +18,12 @@ class User(
     def for_json(self):
         d = dict(self._asdict())
         d["full_name"] = self.full_name
-        del d["telegram_user_id"]
         del d["phone_number"]
-        del d["uses_signal"]
         del d["always_uses_email"]
         return d
 
-    def uses_telegram_bot(self):
-        return bool(self.telegram_user_id)
-
-    def uses_signal_bot(self):
-        return self.uses_signal and self.phone_number
-
     def uses_email(self):
-        return (
-            not self.uses_telegram_bot() and not self.uses_signal_bot()
-        ) or self.always_uses_email
+        return self.always_uses_email
 
 
 Tag = namedtuple("Tag", "tag_id tag user")

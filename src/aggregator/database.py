@@ -53,31 +53,3 @@ class MySQLAdapter(object):
             """
             )
         return [Tag(row[0], row[1], User(*row[2:])) for row in mycursor]
-
-    def store_telegram_user_id_for_user_id(self, telegram_user_id, user_id, logger):
-        logger = logger.getLogger(subsystem="mysql")
-        logger.info(
-            f"Registering user {user_id} with Telegram User ID {telegram_user_id}"
-        )
-        with self._connection() as db:
-            mycursor = db.cursor()
-            mycursor.execute(
-                """
-                UPDATE members_user SET telegram_user_id = %s WHERE id = %s
-            """,
-                (telegram_user_id, user_id),
-            )
-            db.commit()
-
-    def delete_telegram_user_id_for_user_id(self, user_id, logger):
-        logger = logger.getLogger(subsystem="mysql")
-        logger.info(f"Clearing Telegram User ID for user {user_id}")
-        with self._connection() as db:
-            mycursor = db.cursor()
-            mycursor.execute(
-                """
-                UPDATE members_user SET telegram_user_id = NULL WHERE id = %s
-            """,
-                (user_id,),
-            )
-            db.commit()

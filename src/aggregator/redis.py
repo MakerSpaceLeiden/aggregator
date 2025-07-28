@@ -20,7 +20,6 @@ class RedisAdapter(object):
         key_prefix,
         users_expiration_time_in_sec,
         pending_machine_activation_timeout_in_sec,
-        telegram_token_expiration_in_sec,
         machine_state_timeout_in_minutes,
         history_lines_expiration_in_days,
     ):
@@ -34,7 +33,6 @@ class RedisAdapter(object):
         self.pending_machine_activation_timeout_in_sec = (
             pending_machine_activation_timeout_in_sec
         )
-        self.telegram_token_expiration_in_sec = telegram_token_expiration_in_sec
         self.machine_state_timeout_in_minutes = machine_state_timeout_in_minutes
         self.history_lines_expiration_in_days = history_lines_expiration_in_days
 
@@ -91,19 +89,6 @@ class RedisAdapter(object):
             )
 
             self.redis.delete(self._k_users_by_telegram_id())
-            telegram_users = [u for u in users if u.telegram_user_id]
-            if len(telegram_users) > 0:
-                self.redis.hmset(
-                    self._k_users_by_telegram_id(),
-                    dict(
-                        (user.telegram_user_id, json.dumps(user._asdict()))
-                        for user in telegram_users
-                    ),
-                )
-                self.redis.pexpire(
-                    self._k_users_by_telegram_id(),
-                    self.users_expiration_time_in_sec * 1000,
-                )
 
             self.redis.delete(self._k_users_by_phone_number())
             users_with_phone_number = [u for u in users if u.phone_number]
@@ -239,28 +224,6 @@ class RedisAdapter(object):
         logger.info("Reading lights ON")
         return [m.decode("utf-8") for m in self.redis.smembers(self._k_lights_on())]
 
-    def set_telegram_token(self, token, user_id, logger):
-        logger = logger.getLogger(subsystem="redis")
-        logger.info(f"Set Telegram token for user {user_id}")
-        self.redis.setex(
-            self._k_telegram_token(token),
-            self.telegram_token_expiration_in_sec,
-            str(user_id),
-        )
-
-    def get_user_id_by_telegram_token(self, token, logger):
-        logger = logger.getLogger(subsystem="redis")
-        logger.info(f"Get Telegram token {token}")
-        value = self.redis.get(self._k_telegram_token(token))
-        return int(value) if value else None
-
-    def get_user_by_telegram_id(self, telegram_id, logger):
-        logger = logger.getLogger(subsystem="redis")
-        logger.info(f"Get user with Telegram ID {telegram_id}")
-        data = self.redis.hget(self._k_users_by_telegram_id(), telegram_id)
-        if data:
-            return User(**json.loads(data))
-
     def get_user_by_phone_number(self, phone_number, logger):
         logger = logger.getLogger(subsystem="redis")
         logger.info(f"Get user with phone number {phone_number}")
@@ -329,9 +292,6 @@ class RedisAdapter(object):
 
     def _k_space_open(self):
         return f"{self.key_prefix}:so"
-
-    def _k_telegram_token(self, token):
-        return f"{self.key_prefix}:tt{token}"
 
     def _k_users_by_id(self):
         return f"{self.key_prefix}:ui"

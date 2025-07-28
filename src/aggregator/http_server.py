@@ -122,28 +122,6 @@ def run_http_server(
         )
         return Response(token.encode("utf-8"), mimetype="text/plain")
 
-    @app.route("/telegram/disconnect", methods=["POST"])
-    @with_basic_auth
-    async def telegram_disconnect():
-        request_body = await request.get_data()
-        request_payload = json.loads(request_body)
-        await worker_input_queue.add_task_with_result_future(
-            partial(aggregator.delete_telegram_id_for_user, request_payload["user_id"]),
-            request.logger,
-        )
-        return Response("Ok", mimetype="text/plain")
-
-    @app.route("/signal/onboard", methods=["POST"])
-    @with_basic_auth
-    async def signal_onboard():
-        request_body = await request.get_data()
-        request_payload = json.loads(request_body)
-        await worker_input_queue.add_task_with_result_future(
-            partial(aggregator.onboard_new_signal_user, request_payload["user_id"]),
-            request.logger,
-        )
-        return Response("Ok", mimetype="text/plain")
-
     @app.route("/notification/test", methods=["POST"])
     @with_basic_auth
     async def notification_test():

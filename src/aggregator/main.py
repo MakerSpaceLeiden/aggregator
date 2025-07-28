@@ -45,25 +45,6 @@ def _main(config):
     logger, logging_handler = configure_logging(**config.get("logging", {}))
     logger.info("Initializing Aggregator service")
 
-    # From https://stackoverflow.com/questions/2549939/get-signal-names-from-numbers-in-python
-    # _signames = {v: k
-    #              for k, v in reversed(sorted(vars(signal).items()))
-    #              if k.startswith('SIG') and not k.startswith('SIG_')}
-    #
-    #
-    # def get_signal_name(signum):
-    #     """Returns the signal name of the given signal number."""
-    #     return _signames[signum]
-    #
-    # # Properly detect Ctrl+C
-    # def signal_handler(signum, frame):
-    #     print('AAA')
-    #     # print('Received signal {} ({}), stopping...'.format(signum, get_signal_name(signum)))
-    #     # os._exit(1)
-    # signal.signal(signal.SIGINT, signal_handler)
-    # signal.signal(signal.SIGTERM, signal_handler)
-    # signal.signal(signal.SIGABRT, signal_handler)
-
     # Initialize AsyncIO
     loop = asyncio.get_event_loop()
 
@@ -108,30 +89,6 @@ def _main(config):
     worker = Worker(worker_input_queue)
     worker.start_working_in_background_thread()
 
-    # Start Telegram BOT
-    telegram_bot = None
-    if config.get("telegram_bot"):
-        try:
-            from aggregator.bots.telegram_bot import TelegramBot
-
-            telegram_bot = TelegramBot(
-                worker_input_queue, aggregator, logger, **config["telegram_bot"]
-            )
-            telegram_bot.start_bot()
-        except Exception:
-            logger.exception("Unexpected error while starting Telegram BOT")
-
-    # Start Signal BOT
-    signal_bot = None
-    if config.get("signal_bot"):
-        try:
-            from aggregator.bots.signal_bot import SignalBot
-
-            signal_bot = SignalBot(worker_input_queue, aggregator, logger, loop)
-            signal_bot.start_bot()
-        except Exception:
-            logger.exception("Unexpected error while starting Signal BOT")
-
     # Start cronjobs
     if "check_stale_checkins" in config:
         start_checking_for_stale_checkins(
@@ -155,8 +112,4 @@ def _main(config):
     )
 
     # Quit the application
-    if telegram_bot:
-        telegram_bot.stop_bot()
-    if signal_bot:
-        signal_bot.stop_bot()
     mqtt_listener_client.stop()
