@@ -58,6 +58,17 @@ class MockDatabaseAdapter(object):
         return ALL_MACHINES
 
 
+class MockCrmAdapter(object):
+    def __init__(self):
+        pass
+
+    def user_checkin(self, user_id, logger):
+        pass
+
+    def user_checkout(self, user_id, logger):
+        pass
+
+
 class AggregatorBaseTestSuite(unittest.TestCase):
     def setUp(self):
         self.maxDiff = None  # To see large JSON diffs
@@ -76,12 +87,14 @@ class AggregatorBaseTestSuite(unittest.TestCase):
             60,
             7,
         )
+        self.crm_adapter = MockCrmAdapter()
         self._delete_all_redis_keys()
         self.task_scheduler = TaskScheduler(self.clock, self.logger)
         self.db = MockDatabaseAdapter(self)
         self.aggregator = Aggregator(
             self.db,
             self.redis_adapter,
+            self.crm_adapter,
             http_server_input_message_queue,
             self.clock,
             self,

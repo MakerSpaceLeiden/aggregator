@@ -45,6 +45,11 @@ CONFIG = {
         "port": 1883,
         "log_all_messages": True,
     },
+    "crm": {
+        "base_url": "https://mijn.makerspaceleiden.nl/api/v1",
+        "auth_type": "token",
+        "api_token": os.environ["MSL_AGGREGATOR_CRM_API_TOKEN"],
+    },
     "http": {
         "host": "127.0.0.1",
         "port": 5000,

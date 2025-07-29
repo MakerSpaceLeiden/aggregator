@@ -31,6 +31,7 @@ class Aggregator(object):
         self,
         database_adapter,
         redis_adapter,
+        crm_adapter,
         notifications_queue,
         clock,
         email_adapter,
@@ -39,6 +40,7 @@ class Aggregator(object):
     ):
         self.database_adapter = database_adapter
         self.redis_adapter = redis_adapter
+        self.crm_adapter = crm_adapter
         self.notifications_queue = notifications_queue
         self.clock = clock
         self.checkin_stale_after_hours = checkin_stale_after_hours
@@ -122,6 +124,10 @@ class Aggregator(object):
             raise Exception(f"User ID {user_id} not found in database")
         logger.info(f"user_entered_space: {user.full_name}")
         now = self.clock.now()
+
+        if self.crm_adapter:
+            self.crm_adapter.user_checkin(user_id, logger)
+
         self.redis_adapter.store_user_in_space(user, now, logger)
         self.notifications_queue.send_message(msg_type="user_entered_space")
         self.redis_adapter.store_history_line(
@@ -134,6 +140,10 @@ class Aggregator(object):
         if not user:
             raise Exception(f"User ID {user_id} not found in database")
         logger.info(f"user_left_space: {user.full_name}")
+
+        if self.crm_adapter:
+            self.crm_adapter.user_checkout(user_id, logger)
+
         self.redis_adapter.user_left_space(user, logger)
         self.redis_adapter.store_history_line(
             UserLeft(user_id, self.clock.now(), user.first_name, user.last_name), logger
