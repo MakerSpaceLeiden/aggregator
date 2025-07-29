@@ -40,6 +40,7 @@ class Aggregator(object):
     ):
         self.database_adapter = database_adapter
         self.redis_adapter = redis_adapter
+        self.crm_adapter = crm_adapter
         self.notifications_queue = notifications_queue
         self.clock = clock
         self.checkin_stale_after_hours = checkin_stale_after_hours
