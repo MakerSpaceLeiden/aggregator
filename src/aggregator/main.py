@@ -27,6 +27,7 @@ def _main(config):
 
     from aggregator.clock import Clock
     from aggregator.communication import HttpServerInputMessageQueue, WorkerInputQueue
+    from aggregator.crm_adapter import CrmAdapter
     from aggregator.database import MySQLAdapter
     from aggregator.email_adapter import EmailAdapter
     from aggregator.http_server import run_http_server
@@ -83,6 +84,7 @@ def _main(config):
     aggregator = Aggregator(
         MySQLAdapter(**config["mysql"]),
         RedisAdapter(clock, **config["redis"]),
+        CrmAdapter(**config["crm"]),
         http_server_input_message_queue,
         clock,
         email_adapter,
