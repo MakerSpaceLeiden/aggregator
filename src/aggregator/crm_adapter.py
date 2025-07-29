@@ -6,7 +6,6 @@ from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException, Timeout, ConnectionError
 
 from aggregator.model import Machine, User
-from .clock import Time
 from .model import history_line_to_json, json_to_history_line
 from .utils import make_random_string
 
@@ -14,7 +13,6 @@ from .utils import make_random_string
 class CrmAdapter(object):
     def __init__(
         self,
-        clock,
         base_url: str = "https://mijn.makerspaceleiden.nl/api/v1",
         auth_type: str = "token",  # "token" or "basic"
         api_token: Optional[str] = None,
@@ -28,7 +26,6 @@ class CrmAdapter(object):
         Initialize HTTP REST adapter for MakerSpace Leiden API.
         
         Args:
-            clock: Clock instance for time operations
             base_url: Base URL for the REST API
             auth_type: Authentication type - "token" or "basic"
             api_token: API token for token-based auth
@@ -38,7 +35,6 @@ class CrmAdapter(object):
             verify_ssl: Whether to verify SSL certificates
             headers: Additional headers to include in requests
         """
-        self.clock = clock
         self.base_url = base_url.rstrip('/')
         self.timeout = timeout
         self.verify_ssl = verify_ssl
