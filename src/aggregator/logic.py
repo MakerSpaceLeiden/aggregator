@@ -140,6 +140,10 @@ class Aggregator(object):
         if not user:
             raise Exception(f"User ID {user_id} not found in database")
         logger.info(f"user_left_space: {user.full_name}")
+
+        if self.crm_adapter:
+            self.crm_adapter.user_checkout(user_id, logger)
+
         self.redis_adapter.user_left_space(user, logger)
         self.redis_adapter.store_history_line(
             UserLeft(user_id, self.clock.now(), user.first_name, user.last_name), logger
