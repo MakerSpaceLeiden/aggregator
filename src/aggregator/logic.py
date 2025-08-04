@@ -319,6 +319,10 @@ class Aggregator(object):
             f"Checking out stale user {user.full_name if user else user_id} after {int(elapsed_time_in_hours)} hours"
         )
         self.redis_adapter.remove_user_from_space(user_id, logger)
+
+        if self.crm_adapter:
+            self.crm_adapter.user_checkout(user_id, logger)
+
         notification = StaleCheckoutNotification(
             user, ts_checkin, self.urls.notification_settings(), self.urls.space_state()
         )
