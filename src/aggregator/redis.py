@@ -16,6 +16,7 @@ class RedisAdapter(object):
         host,
         port,
         db,
+        password,
         key_prefix,
         users_expiration_time_in_sec,
         pending_machine_activation_timeout_in_sec,
@@ -24,7 +25,10 @@ class RedisAdapter(object):
         history_lines_expiration_in_days,
     ):
         self.clock = clock
-        self.redis = redis.Redis(host=host, port=port, db=db)
+        if password is not None:
+            self.redis = redis.Redis(host=host, port=port, db=db, password=password)
+        else:
+            self.redis = redis.Redis(host=host, port=port, db=db)
         self.key_prefix = key_prefix
         self.users_expiration_time_in_sec = users_expiration_time_in_sec
         self.pending_machine_activation_timeout_in_sec = (
