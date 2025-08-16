@@ -14,6 +14,7 @@ CONFIG = {
         "host": "localhost",
         "port": 6379,
         "db": 0,
+        "password": os.environ.get("MSL_AGGREGATOR_REDIS_PASSWORD", None),
         "key_prefix": "msl",
         "users_expiration_time_in_sec": 60,
         "pending_machine_activation_timeout_in_sec": 90,

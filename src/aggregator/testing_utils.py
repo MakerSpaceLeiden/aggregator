@@ -81,6 +81,7 @@ class AggregatorBaseTestSuite(unittest.TestCase):
             6379,
             0,
             "msl_aggregator_tests",
+            "",
             60,
             90,
             60,
