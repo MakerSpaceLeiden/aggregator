@@ -1,3 +1,4 @@
+import os
 import unittest
 from collections import defaultdict
 
@@ -80,8 +81,8 @@ class AggregatorBaseTestSuite(unittest.TestCase):
             "127.0.0.1",
             6379,
             0,
+            os.environ.get("MSL_AGGREGATOR_REDIS_PASSWORD", None),
             "msl_aggregator_tests",
-            "",
             60,
             90,
             60,
