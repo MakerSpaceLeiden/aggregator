@@ -8,7 +8,7 @@ from .clock import Time
 class User(
     namedtuple(
         "User",
-        "user_id first_name last_name email telegram_user_id phone_number uses_signal always_uses_email",
+        "user_id first_name last_name email phone_number always_uses_email",
     )
 ):
     @property

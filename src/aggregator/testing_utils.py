@@ -14,9 +14,7 @@ STEFANO = User(
     first_name="Stefano",
     last_name="Masini",
     email="stefano@stefanomasini.com",
-    telegram_user_id="1234",
     phone_number="+316123456",
-    uses_signal=True,
     always_uses_email=True,
 )
 
@@ -25,9 +23,7 @@ BOB = User(
     first_name="Bob",
     last_name="de Bouwer",
     email="bob@bouwer.com",
-    telegram_user_id="2345",
     phone_number="+316456789",
-    uses_signal=True,
     always_uses_email=True,
 )
 
