@@ -2,7 +2,6 @@
 
 import random
 from collections import defaultdict
-from functools import partial
 
 from .bots.bot_logic import BotLogic
 from .messages import (
@@ -13,7 +12,6 @@ from .messages import (
     ProblemMachineLeftOnBySomeoneElse,
     ProblemMachineLeftOnByUser,
     ProblemsLeavingSpaceNotification,
-    StaleCheckoutNotification,
     TestNotification,
 )
 from .model import (
@@ -322,15 +320,6 @@ class Aggregator(object):
 
         if self.crm_adapter:
             self.crm_adapter.user_checkout(user_id, logger)
-
-        notification = StaleCheckoutNotification(
-            user, ts_checkin, self.urls.notification_settings(), self.urls.space_state()
-        )
-        self.task_scheduler.schedule_task_at_time(
-            self.clock.now().replace(hour=8, minute=0),
-            partial(self.send_user_notification, user, notification),
-            logger,
-        )
 
     def send_user_notification(self, user, notification, logger):
         if self.telegram_bot and user.uses_telegram_bot():
