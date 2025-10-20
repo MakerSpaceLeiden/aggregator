@@ -44,11 +44,6 @@ CONFIG = {
     "email": {
         "from_address": "MakerSpace BOT <noc@makerspaceleiden.nl>",
     },
-    # 'telegram_bot': {
-    #     'api_token': os.environ['TELEGRAM_BOT_API'],
-    # },
-    # 'signal_bot': {
-    # },
 }
 
 
