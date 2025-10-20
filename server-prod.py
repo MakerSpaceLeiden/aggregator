@@ -60,11 +60,6 @@ CONFIG = {
             "password": os.environ["MSL_AGGREGATOR_BASIC_AUTH_PASSWORD"],
         },
     },
-    "check_stale_checkins": {
-        # If someone is still checked in at 5am from at least midnight, consider it stale
-        "crontab": "0 5 * * *",  # At 5am every day
-        "stale_after_hours": 5,
-    },
     "email": {
         "from_address": "MakerSpace BOT <noc@makerspaceleiden.nl>",
     },

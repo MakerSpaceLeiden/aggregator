@@ -3,13 +3,6 @@ import asyncio
 import aiocron
 
 
-def start_checking_for_stale_checkins(aggregator, worker_input_queue, crontab, logger):
-    @aiocron.crontab(crontab)
-    @asyncio.coroutine
-    def early_in_the_morning():
-        worker_input_queue.add_task(aggregator.clean_stale_user_checkins, logger)
-
-
 def start_checking_for_off_machines(aggregator, worker_input_queue, logger):
     @aiocron.crontab("*/5 * * * *")  # Every five minutes
     @asyncio.coroutine

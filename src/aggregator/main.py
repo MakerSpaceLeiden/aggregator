@@ -35,11 +35,7 @@ def _main(config):
     from aggregator.logic import Aggregator
     from aggregator.mqtt.mqtt_client import MqttListenerClient
     from aggregator.redis import RedisAdapter
-    from aggregator.timed_tasks import (
-        TaskScheduler,
-        start_checking_for_off_machines,
-        start_checking_for_stale_checkins,
-    )
+    from aggregator.timed_tasks import TaskScheduler, start_checking_for_off_machines
     from aggregator.worker import Worker
 
     logger, logging_handler = configure_logging(**config.get("logging", {}))
@@ -89,9 +85,6 @@ def _main(config):
         clock,
         email_adapter,
         task_scheduler,
-        config["check_stale_checkins"]["stale_after_hours"]
-        if "check_stale_checkins" in config
-        else 0,
     )
 
     # Start MQTT listener
@@ -133,13 +126,6 @@ def _main(config):
             logger.exception("Unexpected error while starting Signal BOT")
 
     # Start cronjobs
-    if "check_stale_checkins" in config:
-        start_checking_for_stale_checkins(
-            aggregator,
-            worker_input_queue,
-            config["check_stale_checkins"]["crontab"],
-            logger,
-        )
     start_checking_for_off_machines(aggregator, worker_input_queue, logger)
     task_scheduler.start_running_scheduled_tasks(worker_input_queue)
 

@@ -34,14 +34,12 @@ class Aggregator(object):
         clock,
         email_adapter,
         task_scheduler,
-        checkin_stale_after_hours,
     ):
         self.database_adapter = database_adapter
         self.redis_adapter = redis_adapter
         self.crm_adapter = crm_adapter
         self.notifications_queue = notifications_queue
         self.clock = clock
-        self.checkin_stale_after_hours = checkin_stale_after_hours
         self.email_adapter = email_adapter
         self.task_scheduler = task_scheduler
         self.bot_logic = BotLogic(self)
@@ -298,28 +296,6 @@ class Aggregator(object):
             else None,
             "user": user.for_json() if user else None,
         }
-
-    def clean_stale_user_checkins(self, logger):
-        logger = logger.getLogger(subsystem="aggregator")
-        logger.info("Checking for stale users")
-        users = self.redis_adapter.get_user_ids_in_space_with_timestamps(logger)
-        now = self.clock.now()
-        for user_id, ts_checkin in users:
-            elapsed_time_in_hours = now.delta_in_hours(ts_checkin)
-            if elapsed_time_in_hours > self.checkin_stale_after_hours:
-                self._check_out_stale_user(
-                    user_id, ts_checkin, elapsed_time_in_hours, logger
-                )
-
-    def _check_out_stale_user(self, user_id, ts_checkin, elapsed_time_in_hours, logger):
-        user = self._get_user_by_id(user_id, logger)
-        logger.info(
-            f"Checking out stale user {user.full_name if user else user_id} after {int(elapsed_time_in_hours)} hours"
-        )
-        self.redis_adapter.remove_user_from_space(user_id, logger)
-
-        if self.crm_adapter:
-            self.crm_adapter.user_checkout(user_id, logger)
 
     def send_user_notification(self, user, notification, logger):
         if self.telegram_bot and user.uses_telegram_bot():
