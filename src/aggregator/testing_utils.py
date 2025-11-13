@@ -14,9 +14,7 @@ STEFANO = User(
     first_name="Stefano",
     last_name="Masini",
     email="stefano@stefanomasini.com",
-    telegram_user_id="1234",
     phone_number="+316123456",
-    uses_signal=True,
     always_uses_email=True,
 )
 
@@ -25,9 +23,7 @@ BOB = User(
     first_name="Bob",
     last_name="de Bouwer",
     email="bob@bouwer.com",
-    telegram_user_id="2345",
     phone_number="+316456789",
-    uses_signal=True,
     always_uses_email=True,
 )
 
@@ -86,7 +82,6 @@ class AggregatorBaseTestSuite(unittest.TestCase):
             60,
             90,
             60,
-            60,
             7,
         )
         self.crm_adapter = MockCrmAdapter()
@@ -103,7 +98,6 @@ class AggregatorBaseTestSuite(unittest.TestCase):
             self.task_scheduler,
             5,
         )
-        self.aggregator.signal_bot = self
         self.bot_messages = []
         self.emails_sent = []
         self.bot_notification_objects = []
@@ -132,12 +126,3 @@ class AggregatorBaseTestSuite(unittest.TestCase):
 
     def send_email(self, name, email, message, logger):
         self.emails_sent.append((name, email, message.__class__.__name__))
-
-    def send_bot_message(self, user, message):
-        reply = self.aggregator.handle_bot_message(
-            f"signal-{user.phone_number}", user, message, self.logger
-        )
-        if not reply:
-            raise Exception("Missing reply from BOT logic")
-        else:
-            self.send_notification(user, reply, self.logger)

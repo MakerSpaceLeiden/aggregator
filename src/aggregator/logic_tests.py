@@ -63,11 +63,7 @@ class TestApplicationLogic(AggregatorBaseTestSuite):
 
         self.aggregator.user_left_space(STEFANO.user_id, self.logger)
 
-        self.assertEqual(self.bot_messages, [(1, "ProblemsLeavingSpaceNotification")])
-        problems = [
-            p.__class__.__name__ for p in self.bot_notification_objects[0].problems
-        ]
-        self.assertEqual(problems, ["ProblemMachineLeftOnByUser"])
+        self.assertEqual(self.bot_messages, [])
 
     def test_warn_user_when_he_leaves_and_another_machine_is_on(self):
         self.aggregator.user_entered_space(STEFANO.user_id, self.logger)
@@ -79,11 +75,7 @@ class TestApplicationLogic(AggregatorBaseTestSuite):
 
         self.aggregator.user_left_space(STEFANO.user_id, self.logger)
 
-        self.assertEqual(self.bot_messages, [(1, "ProblemsLeavingSpaceNotification")])
-        problems = [
-            p.__class__.__name__ for p in self.bot_notification_objects[0].problems
-        ]
-        self.assertEqual(problems, ["ProblemMachineLeftOnBySomeoneElse"])
+        self.assertEqual(self.bot_messages, [])
 
     def test_warn_user_when_he_leaves_lights_on(self):
         self.aggregator.user_entered_space(STEFANO.user_id, self.logger)
@@ -97,11 +89,7 @@ class TestApplicationLogic(AggregatorBaseTestSuite):
 
         self.aggregator.user_left_space(STEFANO.user_id, self.logger)
 
-        self.assertEqual(self.bot_messages, [(1, "ProblemsLeavingSpaceNotification")])
-        problems = [
-            p.__class__.__name__ for p in self.bot_notification_objects[0].problems
-        ]
-        self.assertEqual(problems, ["ProblemLightLeftOn"])
+        self.assertEqual(self.bot_messages, [])
 
     def test_machine_on_and_off(self):
         self.aggregator.user_entered_space(STEFANO.user_id, self.logger)

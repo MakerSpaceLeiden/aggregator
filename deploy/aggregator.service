@@ -1,6 +1,6 @@
 [Unit]
 Description=Makerspace Leiden Aggregator
-After=network.target redis.service signal.service
+After=network.target redis.service
 
 [Service]
 Type=simple
